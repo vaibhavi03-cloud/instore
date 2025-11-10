@@ -1,353 +1,55 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🛒 Smart Supermarket Navigation</title>
-<style>
-/* ===== Base Styling ===== */
-body {
-  font-family: 'Poppins', Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-  background: linear-gradient(135deg, #b3e0ff, #e6f9ff);
-  color: #333;
-  overflow-x: hidden;
-}
-
-header {
-  background: linear-gradient(90deg, #0078d7, #00bfff);
-  color: #fff;
-  text-align: center;
-  padding: 1.2rem;
-  font-size: 2rem;
-  font-weight: 700;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.25);
-  letter-spacing: 1px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-/* ===== Controls ===== */
-.controls {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  padding: 1rem;
-  background: rgba(255,255,255,0.8);
-  border-bottom: 2px solid #cde9ff;
-  backdrop-filter: blur(8px);
-}
-
-select, input, button {
-  padding: 0.7rem 1rem;
-  border-radius: 12px;
-  border: 1px solid #ccc;
-  font-size: 1rem;
-  transition: 0.3s ease;
-  outline: none;
-}
-
-button {
-  background: linear-gradient(90deg, #0078d7, #00bfff);
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-  box-shadow: 0 4px 10px rgba(0,120,215,0.4);
-}
-
-button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 15px rgba(0,120,215,0.6);
-}
-
-/* ===== Container ===== */
-.container {
-  max-width: 1200px;
-  margin: 20px auto;
-  padding: 1.5rem;
-  background: #ffffffcc;
-  border-radius: 20px;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-}
-
-/* ===== Items ===== */
-.items {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 20px;
-}
-
-.card {
-  border-radius: 18px;
-  padding: 18px;
-  background: linear-gradient(145deg, #f5fbff, #e8f4ff);
-  border: 1px solid #cde9ff;
-  box-shadow: 0 6px 12px rgba(0,0,0,0.1);
-  transition: all 0.3s ease;
-}
-.card:hover { transform: translateY(-5px); }
-.card.selected {
-  border: 2px solid #0078d7;
-  background: linear-gradient(145deg, #d0e8ff, #b0e0ff);
-}
-.card h3 { color: #0078d7; margin-bottom: 8px; }
-.card p { margin: 4px 0; font-size: 0.95rem; }
-
-/* ===== SVG Map ===== */
-#storeMap {
-  width: 100%;
-  height: 600px;
-  margin-top: 25px;
-  border-radius: 16px;
-  background: repeating-linear-gradient(45deg, #eaf6ff, #f4faff 20px);
-  border: 2px solid #cde9ff;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.1);
-}
-
-/* ===== Route Info ===== */
-.route-info {
-  margin-top: 20px;
-  padding: 14px;
-  border-radius: 12px;
-  background: #e0f7ff;
-  border-left: 6px solid #0078d7;
-  font-size: 1rem;
-  display: none;
-}
-
-/* ===== Shopkeeper Controls ===== */
-.shopkeeper-controls {
-  display: none;
-  background: #f0faff;
-  padding: 15px;
-  border: 2px dashed #00bfff;
-  border-radius: 12px;
-  margin: 10px auto;
-  max-width: 1000px;
-}
-.shopkeeper-controls input, .shopkeeper-controls select {
-  margin: 5px;
-}
-
-/* ===== Login Popup ===== */
-#loginModal {
-  display: none;
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.6);
-  justify-content: center;
-  align-items: center;
-  z-index: 999;
-}
-#loginModal .modal-content {
-  background: white;
-  padding: 30px;
-  border-radius: 15px;
-  text-align: center;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-}
-#loginModal input {
-  font-size: 1rem;
-  padding: 10px;
-  margin-top: 10px;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-}
-#loginModal button {
-  margin-top: 15px;
-}
-
-/* ===== Footer ===== */
-footer {
-  text-align: center;
-  padding: 1.2rem;
-  background: linear-gradient(90deg, #0078d7, #00bfff);
-  color: #fff;
-  font-weight: 600;
-  margin-top: 40px;
-  border-top-left-radius: 12px;
-  border-top-right-radius: 12px;
-}
-
-/* ===== Animation ===== */
-@keyframes moveDot {
-  0% { offset-distance: 0%; }
-  100% { offset-distance: 100%; }
-}
-</style>
-</head>
-
-<body>
-<header>🛒 Smart Supermarket Navigation</header>
-
-<div class="controls">
-  <input type="text" id="searchBox" placeholder="🔍 Search item..." onkeyup="filterItems()">
-  <select id="floorFilter" onchange="changeFloor()">
-    <option value="Ground Floor">Ground Floor</option>
-    <option value="First Floor">First Floor</option>
-  </select>
-  <select id="categoryFilter" onchange="filterItems()">
-    <option value="">All Categories</option>
-    <option value="Fruits">Fruits</option>
-    <option value="Vegetables">Vegetables</option>
-    <option value="Dairy">Dairy</option>
-    <option value="Bakery">Bakery</option>
-    <option value="Electronics">Electronics</option>
-    <option value="Clothing">Clothing</option>
-  </select>
-  <button onclick="showRoute()">🧭 Show Route</button>
-  <button onclick="toggleMode()" style="background:#ff9f00;">🧾 Switch Mode</button>
-</div>
-
-<!-- ===== Shopkeeper Panel ===== -->
-<div class="shopkeeper-controls" id="shopkeeperPanel">
-  <h3>🧾 Shopkeeper Mode — Manage Items</h3>
-  <input type="text" id="itemName" placeholder="Item Name">
-  <input type="text" id="itemBrand" placeholder="Brand">
-  <input type="number" id="itemCost" placeholder="Cost ₹">
-  <select id="itemCategory">
-    <option value="Fruits">Fruits</option>
-    <option value="Vegetables">Vegetables</option>
-    <option value="Dairy">Dairy</option>
-    <option value="Bakery">Bakery</option>
-    <option value="Electronics">Electronics</option>
-    <option value="Clothing">Clothing</option>
-  </select>
-  <select id="itemFloor">
-    <option value="Ground Floor">Ground Floor</option>
-    <option value="First Floor">First Floor</option>
-  </select>
-  <input type="number" id="itemX" placeholder="X coordinate">
-  <input type="number" id="itemY" placeholder="Y coordinate">
-  <button onclick="addItem()">➕ Add Item</button>
-  <button onclick="logout()" style="background:red;">🚪 Logout</button>
-</div>
-
-<!-- ===== Login Modal ===== -->
-<div id="loginModal">
-  <div class="modal-content">
-    <h2>🔐 Shopkeeper Login</h2>
-    <p>Enter 4-digit PIN to access shopkeeper mode</p>
-    <input type="password" id="pinInput" maxlength="4" placeholder="••••">
-    <br>
-    <button onclick="verifyPIN()">Login</button>
-    <button onclick="closeLogin()" style="background:red;">Cancel</button>
-  </div>
-</div>
-
-<div class="container">
-  <div class="items" id="itemList"></div>
-  <svg id="storeMap"></svg>
-  <div class="route-info" id="routeInfo"></div>
-</div>
-
-<footer>
-  <p>📱 Scan QR or click below to open the app:</p>
-  <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://vaibhavi03-cloud.github.io/instore/" 
-       alt="QR Code to Smart Supermarket" width="180" height="180"
-       style="border:5px solid white; border-radius:12px; box-shadow:0 0 10px rgba(0,0,0,0.3);">
-  <br><br>
-  <a href="https://vaibhavi03-cloud.github.io/instore/" 
-     target="_blank"
-     style="color:white;background:#0056b3;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:bold;">
-     🌐 Open Smart Supermarket App
-  </a>
-</footer>
-
 <script>
-let shopkeeperMode = false;
+// ===== Setup Data =====
+const svg = document.getElementById("storeMap");
 let currentFloor = "Ground Floor";
 let selectedItems = new Set();
 let currentLocation = {x: 40, y: 550, floor: "Ground Floor"};
-const svg = document.getElementById("storeMap");
-const correctPIN = "1234"; // default pin
-
 let items = [];
-const categories = ["Fruits","Vegetables","Dairy","Bakery","Electronics","Clothing"];
-const brands = ["BrandA","BrandB","BrandC","BrandD"];
 
-// Generate sample data
-for (let f of ["Ground Floor","First Floor"]) {
-  for (let i = 1; i <= 20; i++) {
-    let cat = categories[i % categories.length];
+// Define categories and sample items
+const categoryData = {
+  "Fruits": ["🍎 Apple", "🍌 Banana", "🍊 Orange", "🍇 Grapes", "🍓 Strawberry", "🍉 Watermelon"],
+  "Vegetables": ["🥔 Potato", "🥕 Carrot", "🧅 Onion", "🧄 Garlic", "🌽 Corn", "🥦 Broccoli"],
+  "Dairy": ["🥛 Milk", "🧀 Cheese", "🍦 Ice Cream", "🍶 Yogurt", "🧈 Butter"],
+  "Bakery": ["🥖 Bread", "🍩 Donut", "🥐 Croissant", "🍪 Cookies", "🍰 Cake"],
+  "Electronics": ["💻 Laptop", "📱 Smartphone", "🎧 Headphones", "📺 TV", "⌚ Smartwatch"],
+  "Clothing": ["👕 T-shirt", "👖 Jeans", "👗 Dress", "🧥 Jacket", "👟 Shoes"]
+};
+
+const colors = {
+  "Fruits": "#ffe6e6",
+  "Vegetables": "#e6ffe6",
+  "Dairy": "#e6f0ff",
+  "Bakery": "#fff3e6",
+  "Electronics": "#e6f7ff",
+  "Clothing": "#f5e6ff",
+  "Facility": "#ffdd57"
+};
+
+// Generate items by section and position
+let y = 100;
+let x = 100;
+for (let [category, names] of Object.entries(categoryData)) {
+  names.forEach((name, i) => {
     items.push({
-      name: `Item${i}`,
-      brand: brands[i % brands.length],
-      floor: f,
-      category: cat,
-      aisle: `A${i}`,
-      cost: Math.floor(Math.random() * 500) + 50,
-      x: 100 + (i * 35) % 900,
-      y: 100 + (i * 45) % 400
+      name: name,
+      brand: ["BrandA", "BrandB", "BrandC"][i % 3],
+      floor: "Ground Floor",
+      category: category,
+      aisle: `${category[0]}-${i + 1}`,
+      cost: Math.floor(Math.random() * 400) + 50,
+      x: x + (i * 90),
+      y: y
     });
-  }
-}
-items.push({name:"Washroom",floor:"Ground Floor",category:"Facility",facility:true,x:50,y:500});
-items.push({name:"Lift",floor:"Ground Floor",category:"Facility",facility:true,x:500,y:500});
-items.push({name:"Trial Room",floor:"First Floor",category:"Facility",facility:true,x:900,y:450});
-
-// ===== Login System =====
-function toggleMode() {
-  if (!shopkeeperMode) {
-    document.getElementById("loginModal").style.display = "flex";
-  } else {
-    logout();
-  }
+  });
+  y += 90;
+  if (y > 450) { y = 100; x += 180; } // Adjust to create new columns after some rows
 }
 
-function verifyPIN() {
-  const pin = document.getElementById("pinInput").value;
-  if (pin === correctPIN) {
-    shopkeeperMode = true;
-    document.getElementById("loginModal").style.display = "none";
-    document.getElementById("shopkeeperPanel").style.display = "block";
-    alert("✅ Access Granted. Shopkeeper Mode Enabled!");
-    displayItems();
-  } else {
-    alert("❌ Incorrect PIN! Access Denied.");
-  }
-}
-
-function closeLogin() {
-  document.getElementById("loginModal").style.display = "none";
-}
-
-function logout() {
-  shopkeeperMode = false;
-  document.getElementById("shopkeeperPanel").style.display = "none";
-  alert("👋 Logged out. Back to Customer Mode.");
-  displayItems();
-}
-
-// ===== Add / Delete Items =====
-function addItem() {
-  const name = document.getElementById("itemName").value;
-  const brand = document.getElementById("itemBrand").value;
-  const cost = parseInt(document.getElementById("itemCost").value);
-  const category = document.getElementById("itemCategory").value;
-  const floor = document.getElementById("itemFloor").value;
-  const x = parseInt(document.getElementById("itemX").value);
-  const y = parseInt(document.getElementById("itemY").value);
-
-  if (!name || !brand || !cost || !x || !y) return alert("Fill all fields!");
-  items.push({name, brand, category, floor, cost, x, y, aisle:`A${items.length+1}`});
-  alert(`${name} added successfully!`);
-  displayItems();
-  drawMap();
-}
-
-function deleteItem(name) {
-  if (confirm(`Delete ${name}?`)) {
-    items = items.filter(i => i.name !== name);
-    displayItems();
-    drawMap();
-  }
-}
+// Add special facilities
+items.push({ name: "🚻 Washroom", floor: "Ground Floor", category: "Facility", facility: true, x: 60, y: 500 });
+items.push({ name: "🛗 Lift", floor: "Ground Floor", category: "Facility", facility: true, x: 550, y: 500 });
+items.push({ name: "🧍‍♂️ Trial Room", floor: "First Floor", category: "Facility", facility: true, x: 900, y: 450 });
 
 // ===== Display Items =====
 function displayItems(filtered = items) {
@@ -362,14 +64,12 @@ function displayItems(filtered = items) {
       <p>Brand: ${item.brand}</p>
       <p>Category: ${item.category}</p>
       <p>Cost: ₹${item.cost}</p>
-      ${shopkeeperMode 
-        ? `<button onclick="deleteItem('${item.name}')">🗑️ Delete</button>`
-        : `<button onclick="toggleSelect('${item.name}', this)">Select</button>`}`;
+      <button onclick="toggleSelect('${item.name}', this)">Select</button>`;
     list.appendChild(div);
   });
 }
 
-// ===== Map + Navigation =====
+// ===== Draw Map =====
 function drawMap() {
   svg.innerHTML = "";
   const start = document.createElementNS("http://www.w3.org/2000/svg", "circle");
@@ -384,24 +84,24 @@ function drawMap() {
     const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     rect.setAttribute("x", item.x);
     rect.setAttribute("y", item.y);
-    rect.setAttribute("width", 60);
-    rect.setAttribute("height", 60);
-    rect.setAttribute("fill", item.facility ? "#ffdd57" : "#dbefff");
+    rect.setAttribute("width", 70);
+    rect.setAttribute("height", 50);
+    rect.setAttribute("fill", colors[item.category] || "#ffffff");
     rect.setAttribute("stroke", "#0078d7");
     rect.setAttribute("rx", 10);
     svg.appendChild(rect);
 
     const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    text.setAttribute("x", item.x + 30);
-    text.setAttribute("y", item.y + 35);
+    text.setAttribute("x", item.x + 35);
+    text.setAttribute("y", item.y + 30);
     text.setAttribute("text-anchor", "middle");
-    text.setAttribute("font-size", "10");
+    text.setAttribute("font-size", "11");
     text.textContent = item.name;
     svg.appendChild(text);
   });
 }
 
-// ===== Helper Functions =====
+// ===== Select Item =====
 function toggleSelect(name, btn) {
   if (selectedItems.has(name)) {
     selectedItems.delete(name);
@@ -414,6 +114,7 @@ function toggleSelect(name, btn) {
   }
 }
 
+// ===== Filtering =====
 function filterItems() {
   const search = document.getElementById("searchBox").value.toLowerCase();
   const category = document.getElementById("categoryFilter").value;
@@ -425,17 +126,29 @@ function filterItems() {
   displayItems(filtered);
 }
 
+// ===== Floor Change =====
 function changeFloor() {
   currentFloor = document.getElementById("floorFilter").value;
   displayItems();
   drawMap();
 }
 
+// ===== Voice Navigation =====
+function speak(text) {
+  const msg = new SpeechSynthesisUtterance(text);
+  msg.lang = "en-IN";
+  msg.rate = 1;
+  speechSynthesis.speak(msg);
+}
+
+// ===== Show Route =====
 function showRoute() {
   if (selectedItems.size === 0) {
     alert("Select at least one item!");
+    speak("Please select at least one item to navigate.");
     return;
   }
+
   const routeInfo = document.getElementById("routeInfo");
   const selected = items.filter(i => selectedItems.has(i.name));
   const grouped = {};
@@ -443,27 +156,45 @@ function showRoute() {
     if (!grouped[i.floor]) grouped[i.floor] = [];
     grouped[i.floor].push(i);
   });
+
   let routeText = "";
-  for (let floor in grouped)
+  for (let floor in grouped) {
     routeText += `🧭 ${floor}: ${grouped[floor].map(i => i.name).join(", ")}<br>`;
+  }
+
   routeInfo.innerHTML = routeText;
   routeInfo.style.display = "block";
+  speak("Starting navigation...");
+
+  for (let floor in grouped) {
+    speak(`Now move to ${floor}`);
+    grouped[floor].forEach(item => {
+      speak(`Find ${item.name} in ${item.category} section.`);
+    });
+  }
 
   drawMap();
   let floorItems = grouped[currentFloor] || [];
   if (floorItems.length === 0) return;
+
   let pathData = `M${currentLocation.x},${currentLocation.y}`;
-  floorItems.forEach(item => pathData += ` L${item.x+30},${item.y+30}`);
+  floorItems.forEach(item => pathData += ` L${item.x + 35},${item.y + 25}`);
   const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
   path.setAttribute("d", pathData);
   path.setAttribute("fill", "none");
-  path.setAttribute("stroke", "red");
-  path.setAttribute("stroke-width", "3");
-  path.setAttribute("stroke-dasharray", "8,6");
+  path.setAttribute("stroke", "#0078d7");
+  path.setAttribute("stroke-width", "4");
+  path.setAttribute("stroke-dasharray", "6,8");
   svg.appendChild(path);
+
+  const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  dot.setAttribute("r", 8);
+  dot.setAttribute("fill", "red");
+  dot.style.offsetPath = `path('${pathData}')`;
+  dot.style.animation = "moveDot 6s linear infinite";
+  svg.appendChild(dot);
 }
 
-window.onload = () => { displayItems(); drawMap(); };
+displayItems();
+drawMap();
 </script>
-</body>
-</html>
