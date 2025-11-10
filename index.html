@@ -3,370 +3,277 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Supermarket Navigation</title>
+<title>🏬 Smart Mall Navigator</title>
 <style>
-  body {
-    font-family: "Segoe UI", sans-serif;
-    background: linear-gradient(135deg, #eaf4ff, #fefefe);
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  h1 {
-    color: #0066cc;
-    margin-top: 15px;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.15);
-  }
-
-  #controls {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-    margin: 15px 0;
-  }
-
-  select, input, button {
-    padding: 8px 10px;
-    border-radius: 8px;
-    border: 1px solid #0078d7;
-    font-size: 14px;
-  }
-
-  button {
-    background-color: #0078d7;
-    color: white;
-    cursor: pointer;
-    transition: 0.3s;
-  }
-
-  button:hover {
-    background-color: #005fa3;
-  }
-
-  #itemList {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-    gap: 15px;
-    width: 90%;
-    margin-bottom: 15px;
-  }
-
-  .card {
-    background: #ffffff;
-    border-radius: 12px;
-    padding: 10px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    text-align: center;
-    transition: transform 0.3s;
-  }
-
-  .card:hover {
-    transform: scale(1.03);
-  }
-
-  .selected {
-    border: 2px solid #0078d7;
-    background-color: #e6f2ff;
-  }
-
-  #mapContainer {
-    perspective: 1000px;
-  }
-
-  svg {
-    background: #ffffff;
-    border: 2px solid #0078d7;
-    border-radius: 12px;
-    width: 90%;
-    height: 600px;
-    margin-bottom: 10px;
-    transition: transform 1.2s ease-in-out;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-  }
-
-  #routeInfo {
-    display: none;
-    background: #e6f7ff;
-    border: 1px solid #0078d7;
-    border-radius: 10px;
-    padding: 10px;
-    width: 80%;
-    font-size: 16px;
-    margin-bottom: 15px;
-  }
-
-  #legend {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 15px;
-    background: white;
-    border-radius: 10px;
-    padding: 10px;
-    width: 80%;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    font-size: 14px;
-  }
-
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .color-box {
-    width: 16px;
-    height: 16px;
-    border-radius: 3px;
-    border: 1px solid #999;
-  }
-
-  @keyframes moveDot {
-    to {
-      offset-distance: 100%;
-    }
-  }
+body {
+  font-family: "Poppins", sans-serif;
+  background: linear-gradient(180deg, #e9f2ff, #ffffff);
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+header {
+  background: linear-gradient(90deg, #0066ff, #00bfff);
+  color: white;
+  padding: 1rem;
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+}
+.controls {
+  margin: 15px auto;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+select, button {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #007bff;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+button {
+  background: linear-gradient(90deg, #007bff, #00d4ff);
+  color: white;
+  border: none;
+  font-weight: 600;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+button:hover {
+  transform: scale(1.05);
+}
+svg {
+  display: block;
+  margin: 20px auto;
+  background: #f7fbff;
+  border-radius: 18px;
+  box-shadow: 0 0 25px rgba(0,0,0,0.15);
+}
+.store {
+  fill: #ffffff;
+  stroke: #0078ff;
+  stroke-width: 2;
+  rx: 12;
+  ry: 12;
+  transition: all 0.3s ease;
+}
+.store:hover {
+  fill: #cde3ff;
+  transform: scale(1.05);
+}
+.facility {
+  fill: #fff4cc;
+  stroke: #ffc107;
+}
+text {
+  font-size: 13px;
+  text-anchor: middle;
+  alignment-baseline: middle;
+  pointer-events: none;
+}
+.current-location {
+  fill: #007bff;
+}
+.path {
+  stroke: #007bff;
+  stroke-width: 3;
+  stroke-dasharray: 8 5;
+  fill: none;
+}
 </style>
 </head>
-
 <body>
-  <h1>🏬 Smart Supermarket Navigation System</h1>
-  <div id="controls">
-    <input type="text" id="searchBox" placeholder="🔍 Search item..." oninput="filterItems()">
-    <select id="categoryFilter" onchange="filterItems()">
-      <option value="">All Categories</option>
-      <option value="Fruits">Fruits</option>
-      <option value="Vegetables">Vegetables</option>
-      <option value="Dairy">Dairy</option>
-      <option value="Bakery">Bakery</option>
-      <option value="Electronics">Electronics</option>
-      <option value="Clothing">Clothing</option>
-    </select>
-    <select id="floorFilter" onchange="changeFloor()">
-      <option value="Ground Floor">Ground Floor</option>
-      <option value="First Floor">First Floor</option>
-    </select>
-    <button onclick="showRoute()">🗺️ Show Route</button>
-  </div>
 
-  <div id="itemList"></div>
-  <div id="mapContainer"><svg id="storeMap"></svg></div>
-  <div id="routeInfo"></div>
+<header>🏬 Smart Multi-Floor Mall Navigator</header>
 
-  <div id="legend">
-    <div class="legend-item"><div class="color-box" style="background:#ffe6e6;"></div> Fruits</div>
-    <div class="legend-item"><div class="color-box" style="background:#e6ffe6;"></div> Vegetables</div>
-    <div class="legend-item"><div class="color-box" style="background:#e6f0ff;"></div> Dairy</div>
-    <div class="legend-item"><div class="color-box" style="background:#fff3e6;"></div> Bakery</div>
-    <div class="legend-item"><div class="color-box" style="background:#e6f7ff;"></div> Electronics</div>
-    <div class="legend-item"><div class="color-box" style="background:#f5e6ff;"></div> Clothing</div>
-    <div class="legend-item"><div class="color-box" style="background:#ffdd57;"></div> Facilities</div>
-  </div>
+<div class="controls">
+  <select id="floorSelect" onchange="changeFloor()">
+    <option value="Ground Floor">Ground Floor</option>
+    <option value="First Floor">First Floor</option>
+  </select>
+
+  <select id="destination">
+    <option value="">-- Select Destination --</option>
+  </select>
+
+  <button onclick="findRoute()">🧭 Start Navigation</button>
+</div>
+
+<svg id="map" width="1000" height="600"></svg>
 
 <script>
-const svg = document.getElementById("storeMap");
+const mallData = {
+  "Ground Floor": [
+    { name: "👗 H&M", x: 120, y: 100 },
+    { name: "👞 Bata", x: 220, y: 100 },
+    { name: "👜 Lifestyle", x: 320, y: 100 },
+    { name: "💄 Sephora", x: 420, y: 100 },
+    { name: "📱 Samsung", x: 600, y: 100 },
+    { name: "💻 Apple Store", x: 700, y: 100 },
+    { name: "🎯 GameZone", x: 800, y: 100 },
+    { name: "🎬 PVR Cinemas", x: 900, y: 100 },
+    { name: "🍔 McDonald's", x: 150, y: 350 },
+    { name: "☕ Starbucks", x: 250, y: 350 },
+    { name: "🍕 Pizza Hut", x: 350, y: 350 },
+    { name: "🍣 Sushi Bar", x: 450, y: 350 },
+    { name: "🥤 KFC", x: 600, y: 350 },
+    { name: "🍩 Dunkin'", x: 700, y: 350 },
+    { name: "🍦 Baskin Robbins", x: 800, y: 350 },
+    { name: "🛗 Lift", x: 480, y: 500, facility: true },
+    { name: "🚻 Washroom", x: 880, y: 500, facility: true }
+  ],
+  "First Floor": [
+    { name: "👕 Zara", x: 120, y: 100 },
+    { name: "🧥 Allen Solly", x: 220, y: 100 },
+    { name: "🧴 Forest Essentials", x: 320, y: 100 },
+    { name: "💅 Nykaa", x: 420, y: 100 },
+    { name: "📷 Reliance Digital", x: 600, y: 100 },
+    { name: "🎳 Bowling Alley", x: 700, y: 100 },
+    { name: "🎤 Karaoke Club", x: 800, y: 100 },
+    { name: "🎮 VR World", x: 900, y: 100 },
+    { name: "🍱 Food Express", x: 150, y: 350 },
+    { name: "🍗 Barbeque Nation", x: 250, y: 350 },
+    { name: "🍜 Noodle Hub", x: 350, y: 350 },
+    { name: "🍛 Curry Leaf", x: 450, y: 350 },
+    { name: "🍟 Burger King", x: 600, y: 350 },
+    { name: "🍧 Cream Stone", x: 700, y: 350 },
+    { name: "🍫 Chocolate Room", x: 800, y: 350 },
+    { name: "🛗 Lift", x: 480, y: 500, facility: true },
+    { name: "🚻 Washroom", x: 880, y: 500, facility: true }
+  ]
+};
+
 let currentFloor = "Ground Floor";
-let selectedItems = new Set();
-let currentLocation = {x: 60, y: 550, floor: "Ground Floor"};
-let items = [];
+let svg = document.getElementById("map");
+let movingDot = null;
 
-const categoryData = {
-  "Ground Floor": {
-    "Fruits": ["🍎 Apple", "🍌 Banana", "🍊 Orange", "🍇 Grapes", "🍓 Strawberry", "🍉 Watermelon"],
-    "Vegetables": ["🥔 Potato", "🥕 Carrot", "🧅 Onion", "🧄 Garlic", "🌽 Corn", "🥦 Broccoli"],
-    "Dairy": ["🥛 Milk", "🧀 Cheese", "🍦 Ice Cream", "🍶 Yogurt", "🧈 Butter"],
-    "Bakery": ["🥖 Bread", "🍩 Donut", "🥐 Croissant", "🍪 Cookies", "🍰 Cake"]
-  },
-  "First Floor": {
-    "Electronics": ["💻 Laptop", "📱 Smartphone", "🎧 Headphones", "📺 TV", "⌚ Smartwatch"],
-    "Clothing": ["👕 T-shirt", "👖 Jeans", "👗 Dress", "🧥 Jacket", "👟 Shoes"]
-  }
-};
-
-const colors = {
-  "Fruits": "#ffe6e6",
-  "Vegetables": "#e6ffe6",
-  "Dairy": "#e6f0ff",
-  "Bakery": "#fff3e6",
-  "Electronics": "#e6f7ff",
-  "Clothing": "#f5e6ff",
-  "Facility": "#ffdd57"
-};
-
-function generateItems() {
-  let y = 100, x = 100;
-  for (let floor in categoryData) {
-    for (let [category, names] of Object.entries(categoryData[floor])) {
-      names.forEach((name, i) => {
-        items.push({
-          name,
-          brand: ["FreshFarm", "DailyMart", "PrimeChoice"][i % 3],
-          floor,
-          category,
-          cost: Math.floor(Math.random() * 400) + 50,
-          x: x + (i * 90),
-          y: y
-        });
-      });
-      y += 90;
-      if (y > 400) { y = 100; x += 180; }
-    }
-  }
-  items.push({ name: "🚻 Washroom", floor: "Ground Floor", category: "Facility", x: 60, y: 500 });
-  items.push({ name: "🛗 Lift", floor: "Ground Floor", category: "Facility", x: 550, y: 500 });
-  items.push({ name: "🛗 Lift", floor: "First Floor", category: "Facility", x: 550, y: 500 });
-  items.push({ name: "🧍‍♂️ Trial Room", floor: "First Floor", category: "Facility", x: 900, y: 450 });
-}
-generateItems();
-
-function displayItems(filtered = items) {
-  const list = document.getElementById("itemList");
-  list.innerHTML = "";
-  filtered.forEach(item => {
-    if (item.floor !== currentFloor || item.category === "Facility") return;
-    const div = document.createElement("div");
-    div.className = "card";
-    div.innerHTML = `
-      <h3>${item.name}</h3>
-      <p>Brand: ${item.brand}</p>
-      <p>Category: ${item.category}</p>
-      <p>Cost: ₹${item.cost}</p>
-      <button onclick="toggleSelect('${item.name}', this)">Select</button>`;
-    list.appendChild(div);
-  });
-}
-
-function drawMap() {
+function drawMall() {
   svg.innerHTML = "";
-  const start = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-  start.setAttribute("cx", currentLocation.x);
-  start.setAttribute("cy", currentLocation.y);
-  start.setAttribute("r", 12);
-  start.setAttribute("fill", "blue");
-  svg.appendChild(start);
+  const data = mallData[currentFloor];
 
-  items.forEach(item => {
-    if (item.floor !== currentFloor) return;
+  data.forEach(store => {
     const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    rect.setAttribute("x", item.x);
-    rect.setAttribute("y", item.y);
-    rect.setAttribute("width", 70);
+    rect.setAttribute("x", store.x);
+    rect.setAttribute("y", store.y);
+    rect.setAttribute("width", 80);
     rect.setAttribute("height", 50);
-    rect.setAttribute("fill", colors[item.category] || "#ffffff");
-    rect.setAttribute("stroke", "#0078d7");
-    rect.setAttribute("rx", 10);
+    rect.setAttribute("class", store.facility ? "facility" : "store");
     svg.appendChild(rect);
 
     const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    text.setAttribute("x", item.x + 35);
-    text.setAttribute("y", item.y + 30);
-    text.setAttribute("text-anchor", "middle");
-    text.setAttribute("font-size", "11");
-    text.textContent = item.name;
+    text.setAttribute("x", store.x + 40);
+    text.setAttribute("y", store.y + 28);
+    text.textContent = store.name;
     svg.appendChild(text);
+  });
+
+  // Entry point
+  const entry = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  entry.setAttribute("cx", 60);
+  entry.setAttribute("cy", 560);
+  entry.setAttribute("r", 10);
+  entry.setAttribute("class", "current-location");
+  svg.appendChild(entry);
+}
+
+function populateDestinations() {
+  const dropdown = document.getElementById("destination");
+  dropdown.innerHTML = "<option value=''>-- Select Destination --</option>";
+  Object.keys(mallData).forEach(floor => {
+    mallData[floor].forEach(store => {
+      if (!store.facility) {
+        const opt = document.createElement("option");
+        opt.value = JSON.stringify({ ...store, floor });
+        opt.textContent = `${store.name} (${floor})`;
+        dropdown.appendChild(opt);
+      }
+    });
   });
 }
 
-function toggleSelect(name, btn) {
-  if (selectedItems.has(name)) {
-    selectedItems.delete(name);
-    btn.innerText = "Select";
-    btn.parentElement.classList.remove("selected");
-  } else {
-    selectedItems.add(name);
-    btn.innerText = "Deselect";
-    btn.parentElement.classList.add("selected");
-  }
-}
-
-function filterItems() {
-  const search = document.getElementById("searchBox").value.toLowerCase();
-  const category = document.getElementById("categoryFilter").value;
-  const filtered = items.filter(i =>
-    i.name.toLowerCase().includes(search) &&
-    (category === "" || i.category === category) &&
-    i.floor === currentFloor
-  );
-  displayItems(filtered);
+function speak(msg) {
+  const utter = new SpeechSynthesisUtterance(msg);
+  utter.lang = "en-IN";
+  speechSynthesis.speak(utter);
 }
 
 function changeFloor() {
-  const svgEl = document.getElementById("storeMap");
-  svgEl.style.transform = currentFloor === "Ground Floor"
-    ? "rotateX(90deg)"
-    : "rotateX(-90deg)";
-
-  setTimeout(() => {
-    currentFloor = document.getElementById("floorFilter").value;
-    displayItems();
-    drawMap();
-    svgEl.style.transform = "rotateX(0deg)";
-  }, 600);
+  currentFloor = document.getElementById("floorSelect").value;
+  drawMall();
 }
 
-function speak(text) {
-  const msg = new SpeechSynthesisUtterance(text);
-  msg.lang = "en-IN";
-  msg.rate = 1;
-  speechSynthesis.speak(msg);
+function findRoute() {
+  const val = document.getElementById("destination").value;
+  if (!val) return alert("Please select your destination.");
+  const dest = JSON.parse(val);
+
+  speak(`Navigating to ${dest.name}`);
+  
+  if (dest.floor !== currentFloor) {
+    speak(`Please take the lift to ${dest.floor}.`);
+    drawLiftRoute(dest);
+  } else {
+    drawPath(dest);
+  }
 }
 
-function showRoute() {
-  if (selectedItems.size === 0) {
-    alert("Select at least one item!");
-    speak("Please select at least one item to navigate.");
-    return;
-  }
-
-  const routeInfo = document.getElementById("routeInfo");
-  const selected = items.filter(i => selectedItems.has(i.name));
-  const grouped = {};
-  selected.forEach(i => {
-    if (!grouped[i.floor]) grouped[i.floor] = [];
-    grouped[i.floor].push(i);
-  });
-
-  let routeText = "";
-  for (let floor in grouped) {
-    routeText += `🧭 ${floor}: ${grouped[floor].map(i => i.name).join(", ")}<br>`;
-  }
-
-  routeInfo.innerHTML = routeText;
-  routeInfo.style.display = "block";
-  speak("Starting navigation...");
-
-  for (let floor in grouped) {
-    speak(`Move to ${floor}`);
-    grouped[floor].forEach(item => speak(`Find ${item.name} in ${item.category} section.`));
-  }
-
-  drawMap();
-  let floorItems = grouped[currentFloor] || [];
-  if (floorItems.length === 0) return;
-
-  let pathData = `M${currentLocation.x},${currentLocation.y}`;
-  floorItems.forEach(item => pathData += ` L${item.x + 35},${item.y + 25}`);
+function drawLiftRoute(dest) {
+  drawMall();
+  const lift = mallData[currentFloor].find(s => s.name === "🛗 Lift");
   const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  path.setAttribute("d", pathData);
-  path.setAttribute("fill", "none");
-  path.setAttribute("stroke", "#0078d7");
-  path.setAttribute("stroke-width", "4");
-  path.setAttribute("stroke-dasharray", "6,8");
+  const d = `M60,560 L${lift.x + 40},${lift.y + 25}`;
+  path.setAttribute("d", d);
+  path.setAttribute("class", "path");
   svg.appendChild(path);
 
-  const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-  dot.setAttribute("r", 8);
-  dot.setAttribute("fill", "red");
-  dot.style.offsetPath = `path('${pathData}')`;
-  dot.style.animation = "moveDot 6s linear infinite";
-  svg.appendChild(dot);
+  animateDot(path, () => {
+    speak("Now moving to first floor via lift.");
+    setTimeout(() => {
+      currentFloor = dest.floor;
+      document.getElementById("floorSelect").value = dest.floor;
+      drawMall();
+      drawPath(dest);
+    }, 2500);
+  });
 }
 
-displayItems();
-drawMap();
+function drawPath(dest) {
+  drawMall();
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  const d = `M60,560 L${dest.x + 40},${dest.y + 25}`;
+  path.setAttribute("d", d);
+  path.setAttribute("class", "path");
+  svg.appendChild(path);
+  animateDot(path, () => speak(`You have reached ${dest.name}.`));
+}
+
+function animateDot(path, callback) {
+  if (movingDot) movingDot.remove();
+  movingDot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  movingDot.setAttribute("r", 8);
+  movingDot.setAttribute("fill", "#ff0077");
+  svg.appendChild(movingDot);
+
+  const length = path.getTotalLength();
+  let progress = 0;
+  function step() {
+    const point = path.getPointAtLength(progress);
+    movingDot.setAttribute("cx", point.x);
+    movingDot.setAttribute("cy", point.y);
+    progress += 3;
+    if (progress <= length) requestAnimationFrame(step);
+    else if (callback) callback();
+  }
+  step();
+}
+
+drawMall();
+populateDestinations();
 </script>
+
 </body>
 </html>
