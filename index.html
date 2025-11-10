@@ -3,277 +3,227 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🏬 Smart Mall Navigator</title>
+<title>Smart Mall Navigator — Multi-Floor</title>
 <style>
-body {
-  font-family: "Poppins", sans-serif;
-  background: linear-gradient(180deg, #e9f2ff, #ffffff);
-  margin: 0;
-  padding: 0;
-  text-align: center;
-}
-header {
-  background: linear-gradient(90deg, #0066ff, #00bfff);
-  color: white;
-  padding: 1rem;
-  font-size: 1.8rem;
-  font-weight: 700;
-  letter-spacing: 1px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.25);
-}
-.controls {
-  margin: 15px auto;
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-select, button {
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid #007bff;
-  font-size: 16px;
-  cursor: pointer;
-  transition: 0.3s ease;
-}
-button {
-  background: linear-gradient(90deg, #007bff, #00d4ff);
-  color: white;
-  border: none;
-  font-weight: 600;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-}
-button:hover {
-  transform: scale(1.05);
-}
-svg {
-  display: block;
-  margin: 20px auto;
-  background: #f7fbff;
-  border-radius: 18px;
-  box-shadow: 0 0 25px rgba(0,0,0,0.15);
-}
-.store {
-  fill: #ffffff;
-  stroke: #0078ff;
-  stroke-width: 2;
-  rx: 12;
-  ry: 12;
-  transition: all 0.3s ease;
-}
-.store:hover {
-  fill: #cde3ff;
-  transform: scale(1.05);
-}
-.facility {
-  fill: #fff4cc;
-  stroke: #ffc107;
-}
-text {
-  font-size: 13px;
-  text-anchor: middle;
-  alignment-baseline: middle;
-  pointer-events: none;
-}
-.current-location {
-  fill: #007bff;
-}
-.path {
-  stroke: #007bff;
-  stroke-width: 3;
-  stroke-dasharray: 8 5;
-  fill: none;
-}
+  body {
+    margin: 0;
+    font-family: "Poppins", sans-serif;
+    background: linear-gradient(135deg, #dceeff, #ffffff);
+  }
+
+  header {
+    background: #002b5b;
+    color: white;
+    text-align: center;
+    padding: 15px 0;
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  }
+
+  #controls {
+    text-align: center;
+    margin: 20px;
+  }
+
+  select, input, button {
+    padding: 10px 15px;
+    border-radius: 25px;
+    border: 1px solid #007bff;
+    margin: 5px;
+    font-size: 15px;
+    outline: none;
+  }
+
+  button {
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.3s;
+  }
+
+  button:hover { background: #0056b3; }
+
+  svg {
+    display: block;
+    margin: 20px auto;
+    background: #f7faff;
+    border-radius: 20px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+  }
+
+  .store {
+    fill: #ffffff;
+    stroke: #007bff;
+    stroke-width: 2;
+    rx: 10;
+    ry: 10;
+    transition: all 0.3s ease;
+  }
+
+  .store:hover { fill: #cce3ff; transform: scale(1.05); }
+
+  text {
+    font-size: 12px;
+    text-anchor: middle;
+    alignment-baseline: middle;
+    pointer-events: none;
+  }
+
+  .facility { fill: #fff4a3; stroke: #ffcc00; }
+  .path-line {
+    stroke: #ff4747;
+    stroke-width: 3;
+    stroke-dasharray: 10;
+    animation: dash 1s linear infinite;
+  }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+
+  .dot { fill: #00ff80; }
 </style>
 </head>
 <body>
+<header>🏬 Smart Mall Navigator — Multi-Floor System</header>
 
-<header>🏬 Smart Multi-Floor Mall Navigator</header>
-
-<div class="controls">
-  <select id="floorSelect" onchange="changeFloor()">
-    <option value="Ground Floor">Ground Floor</option>
-    <option value="First Floor">First Floor</option>
+<div id="controls">
+  <label for="floorSelect">Select Floor:</label>
+  <select id="floorSelect" onchange="loadFloor()">
+    <option value="Ground Floor">Ground Floor 🏢</option>
+    <option value="1st Floor">1st Floor 👗</option>
+    <option value="2nd Floor">2nd Floor 🎬</option>
   </select>
 
-  <select id="destination">
-    <option value="">-- Select Destination --</option>
-  </select>
-
-  <button onclick="findRoute()">🧭 Start Navigation</button>
+  <input type="text" id="searchInput" placeholder="Search store or restaurant..." />
+  <button onclick="navigate()">Find Route</button>
 </div>
 
-<svg id="map" width="1000" height="600"></svg>
+<svg id="mall" width="1000" height="600"></svg>
 
 <script>
-const mallData = {
+const floors = {
   "Ground Floor": [
-    { name: "👗 H&M", x: 120, y: 100 },
-    { name: "👞 Bata", x: 220, y: 100 },
-    { name: "👜 Lifestyle", x: 320, y: 100 },
-    { name: "💄 Sephora", x: 420, y: 100 },
-    { name: "📱 Samsung", x: 600, y: 100 },
-    { name: "💻 Apple Store", x: 700, y: 100 },
-    { name: "🎯 GameZone", x: 800, y: 100 },
-    { name: "🎬 PVR Cinemas", x: 900, y: 100 },
-    { name: "🍔 McDonald's", x: 150, y: 350 },
-    { name: "☕ Starbucks", x: 250, y: 350 },
-    { name: "🍕 Pizza Hut", x: 350, y: 350 },
-    { name: "🍣 Sushi Bar", x: 450, y: 350 },
-    { name: "🥤 KFC", x: 600, y: 350 },
-    { name: "🍩 Dunkin'", x: 700, y: 350 },
-    { name: "🍦 Baskin Robbins", x: 800, y: 350 },
-    { name: "🛗 Lift", x: 480, y: 500, facility: true },
-    { name: "🚻 Washroom", x: 880, y: 500, facility: true }
+    { name: "ENTRANCE", x: 60, y: 520 },
+    { name: "APPLE STORE", x: 150, y: 120 },
+    { name: "SAMSUNG", x: 300, y: 120 },
+    { name: "SONY", x: 450, y: 120 },
+    { name: "CROMA", x: 600, y: 120 },
+    { name: "ATM", x: 850, y: 130 },
+    { name: "LIFT", x: 850, y: 250 },
+    { name: "WASHROOM", x: 850, y: 380 },
+    { name: "SECURITY", x: 80, y: 250 }
   ],
-  "First Floor": [
-    { name: "👕 Zara", x: 120, y: 100 },
-    { name: "🧥 Allen Solly", x: 220, y: 100 },
-    { name: "🧴 Forest Essentials", x: 320, y: 100 },
-    { name: "💅 Nykaa", x: 420, y: 100 },
-    { name: "📷 Reliance Digital", x: 600, y: 100 },
-    { name: "🎳 Bowling Alley", x: 700, y: 100 },
-    { name: "🎤 Karaoke Club", x: 800, y: 100 },
-    { name: "🎮 VR World", x: 900, y: 100 },
-    { name: "🍱 Food Express", x: 150, y: 350 },
-    { name: "🍗 Barbeque Nation", x: 250, y: 350 },
-    { name: "🍜 Noodle Hub", x: 350, y: 350 },
-    { name: "🍛 Curry Leaf", x: 450, y: 350 },
-    { name: "🍟 Burger King", x: 600, y: 350 },
-    { name: "🍧 Cream Stone", x: 700, y: 350 },
-    { name: "🍫 Chocolate Room", x: 800, y: 350 },
-    { name: "🛗 Lift", x: 480, y: 500, facility: true },
-    { name: "🚻 Washroom", x: 880, y: 500, facility: true }
+
+  "1st Floor": [
+    { name: "ZARA", x: 100, y: 120 },
+    { name: "H&M", x: 250, y: 120 },
+    { name: "PUMA", x: 400, y: 120 },
+    { name: "NIKE", x: 550, y: 120 },
+    { name: "ADIDAS", x: 700, y: 120 },
+    { name: "FOOD COURT", x: 100, y: 400 },
+    { name: "STARBUCKS", x: 300, y: 400 },
+    { name: "KFC", x: 500, y: 400 },
+    { name: "TRIAL ROOM", x: 850, y: 250 },
+    { name: "LIFT", x: 850, y: 400 }
+  ],
+
+  "2nd Floor": [
+    { name: "CINEMAX", x: 120, y: 120 },
+    { name: "FUNZONE", x: 300, y: 120 },
+    { name: "BOOK STORE", x: 480, y: 120 },
+    { name: "TOY WORLD", x: 660, y: 120 },
+    { name: "GAMING ARENA", x: 840, y: 120 },
+    { name: "ICE CREAM PARLOR", x: 200, y: 400 },
+    { name: "PIZZA HUT", x: 400, y: 400 },
+    { name: "DOMINO’S", x: 600, y: 400 },
+    { name: "WASHROOM", x: 850, y: 300 },
+    { name: "LIFT", x: 850, y: 450 }
   ]
 };
 
+const svg = document.getElementById("mall");
 let currentFloor = "Ground Floor";
-let svg = document.getElementById("map");
-let movingDot = null;
+let currentX = 60;
+let currentY = 550;
 
-function drawMall() {
-  svg.innerHTML = "";
-  const data = mallData[currentFloor];
-
-  data.forEach(store => {
+function drawFloor(floorData) {
+  svg.innerHTML = ""; // Clear previous floor
+  floorData.forEach(store => {
     const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     rect.setAttribute("x", store.x);
     rect.setAttribute("y", store.y);
-    rect.setAttribute("width", 80);
-    rect.setAttribute("height", 50);
-    rect.setAttribute("class", store.facility ? "facility" : "store");
+    rect.setAttribute("width", 100);
+    rect.setAttribute("height", 60);
+    rect.setAttribute("class", "store");
     svg.appendChild(rect);
 
     const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    text.setAttribute("x", store.x + 40);
-    text.setAttribute("y", store.y + 28);
+    text.setAttribute("x", store.x + 50);
+    text.setAttribute("y", store.y + 35);
     text.textContent = store.name;
     svg.appendChild(text);
   });
 
-  // Entry point
-  const entry = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-  entry.setAttribute("cx", 60);
-  entry.setAttribute("cy", 560);
-  entry.setAttribute("r", 10);
-  entry.setAttribute("class", "current-location");
-  svg.appendChild(entry);
+  // Current location dot
+  const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  dot.setAttribute("cx", currentX);
+  dot.setAttribute("cy", currentY);
+  dot.setAttribute("r", 8);
+  dot.setAttribute("fill", "#00ff80");
+  svg.appendChild(dot);
 }
 
-function populateDestinations() {
-  const dropdown = document.getElementById("destination");
-  dropdown.innerHTML = "<option value=''>-- Select Destination --</option>";
-  Object.keys(mallData).forEach(floor => {
-    mallData[floor].forEach(store => {
-      if (!store.facility) {
-        const opt = document.createElement("option");
-        opt.value = JSON.stringify({ ...store, floor });
-        opt.textContent = `${store.name} (${floor})`;
-        dropdown.appendChild(opt);
-      }
-    });
-  });
-}
-
-function speak(msg) {
-  const utter = new SpeechSynthesisUtterance(msg);
-  utter.lang = "en-IN";
-  speechSynthesis.speak(utter);
-}
-
-function changeFloor() {
+function loadFloor() {
   currentFloor = document.getElementById("floorSelect").value;
-  drawMall();
+  drawFloor(floors[currentFloor]);
 }
 
-function findRoute() {
-  const val = document.getElementById("destination").value;
-  if (!val) return alert("Please select your destination.");
-  const dest = JSON.parse(val);
+function drawPath(x1, y1, x2, y2) {
+  document.querySelectorAll(".path-line").forEach(p => p.remove());
+  document.querySelectorAll(".dot-move").forEach(p => p.remove());
 
-  speak(`Navigating to ${dest.name}`);
-  
-  if (dest.floor !== currentFloor) {
-    speak(`Please take the lift to ${dest.floor}.`);
-    drawLiftRoute(dest);
-  } else {
-    drawPath(dest);
-  }
-}
-
-function drawLiftRoute(dest) {
-  drawMall();
-  const lift = mallData[currentFloor].find(s => s.name === "🛗 Lift");
-  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  const d = `M60,560 L${lift.x + 40},${lift.y + 25}`;
-  path.setAttribute("d", d);
-  path.setAttribute("class", "path");
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  path.setAttribute("x1", x1);
+  path.setAttribute("y1", y1);
+  path.setAttribute("x2", x2);
+  path.setAttribute("y2", y2);
+  path.setAttribute("class", "path-line");
   svg.appendChild(path);
 
-  animateDot(path, () => {
-    speak("Now moving to first floor via lift.");
-    setTimeout(() => {
-      currentFloor = dest.floor;
-      document.getElementById("floorSelect").value = dest.floor;
-      drawMall();
-      drawPath(dest);
-    }, 2500);
-  });
-}
+  // moving dot animation
+  const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  dot.setAttribute("r", 8);
+  dot.setAttribute("class", "dot dot-move");
+  svg.appendChild(dot);
 
-function drawPath(dest) {
-  drawMall();
-  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  const d = `M60,560 L${dest.x + 40},${dest.y + 25}`;
-  path.setAttribute("d", d);
-  path.setAttribute("class", "path");
-  svg.appendChild(path);
-  animateDot(path, () => speak(`You have reached ${dest.name}.`));
-}
-
-function animateDot(path, callback) {
-  if (movingDot) movingDot.remove();
-  movingDot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-  movingDot.setAttribute("r", 8);
-  movingDot.setAttribute("fill", "#ff0077");
-  svg.appendChild(movingDot);
-
-  const length = path.getTotalLength();
   let progress = 0;
-  function step() {
-    const point = path.getPointAtLength(progress);
-    movingDot.setAttribute("cx", point.x);
-    movingDot.setAttribute("cy", point.y);
-    progress += 3;
-    if (progress <= length) requestAnimationFrame(step);
-    else if (callback) callback();
+  function animate() {
+    progress += 0.01;
+    if (progress <= 1) {
+      const cx = x1 + (x2 - x1) * progress;
+      const cy = y1 + (y2 - y1) * progress;
+      dot.setAttribute("cx", cx);
+      dot.setAttribute("cy", cy);
+      requestAnimationFrame(animate);
+    }
   }
-  step();
+  animate();
 }
 
-drawMall();
-populateDestinations();
-</script>
+function navigate() {
+  const query = document.getElementById("searchInput").value.toUpperCase();
+  const floorData = floors[currentFloor];
+  const dest = floorData.find(s => s.name === query);
+  if (dest) {
+    drawPath(currentX, currentY, dest.x + 50, dest.y + 30);
+    alert(`Navigating to ${dest.name} on ${currentFloor} 🏬`);
+  } else {
+    alert("Store not found on this floor!");
+  }
+}
 
+loadFloor();
+</script>
 </body>
 </html>
