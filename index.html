@@ -121,6 +121,20 @@ button:hover {
   display: none;
 }
 
+/* ===== Shopkeeper Mode ===== */
+.shopkeeper-controls {
+  display: none;
+  background: #f0faff;
+  padding: 15px;
+  border: 2px dashed #00bfff;
+  border-radius: 12px;
+  margin: 10px auto;
+  max-width: 1000px;
+}
+.shopkeeper-controls input, .shopkeeper-controls select {
+  margin: 5px;
+}
+
 /* ===== Footer ===== */
 footer {
   text-align: center;
@@ -160,6 +174,30 @@ footer {
     <option value="Clothing">Clothing</option>
   </select>
   <button onclick="showRoute()">🧭 Show Route</button>
+  <button onclick="toggleMode()" style="background:#ff9f00;">🧾 Switch Mode</button>
+</div>
+
+<!-- ===== Shopkeeper Add/Edit Form ===== -->
+<div class="shopkeeper-controls" id="shopkeeperPanel">
+  <h3>🧾 Shopkeeper Mode — Manage Items</h3>
+  <input type="text" id="itemName" placeholder="Item Name">
+  <input type="text" id="itemBrand" placeholder="Brand">
+  <input type="number" id="itemCost" placeholder="Cost ₹">
+  <select id="itemCategory">
+    <option value="Fruits">Fruits</option>
+    <option value="Vegetables">Vegetables</option>
+    <option value="Dairy">Dairy</option>
+    <option value="Bakery">Bakery</option>
+    <option value="Electronics">Electronics</option>
+    <option value="Clothing">Clothing</option>
+  </select>
+  <select id="itemFloor">
+    <option value="Ground Floor">Ground Floor</option>
+    <option value="First Floor">First Floor</option>
+  </select>
+  <input type="number" id="itemX" placeholder="X coordinate">
+  <input type="number" id="itemY" placeholder="Y coordinate">
+  <button onclick="addItem()">➕ Add Item</button>
 </div>
 
 <div class="container">
@@ -168,10 +206,21 @@ footer {
   <div class="route-info" id="routeInfo"></div>
 </div>
 
-<footer>© 2025 Smart Supermarket Navigation</footer>
+<footer>
+  <p>📱 Scan QR or click below to open the app:</p>
+  <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://vaibhavi03-cloud.github.io/instore/" 
+       alt="QR Code to Smart Supermarket" width="180" height="180"
+       style="border:5px solid white; border-radius:12px; box-shadow:0 0 10px rgba(0,0,0,0.3);">
+  <br><br>
+  <a href="https://vaibhavi03-cloud.github.io/instore/" 
+     target="_blank"
+     style="color:white;background:#0056b3;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:bold;">
+     🌐 Open Smart Supermarket App
+  </a>
+</footer>
 
 <script>
-// ===== Setup Data =====
+let shopkeeperMode = false;
 const svg = document.getElementById("storeMap");
 let currentFloor = "Ground Floor";
 let selectedItems = new Set();
@@ -180,9 +229,9 @@ let items = [];
 const categories = ["Fruits","Vegetables","Dairy","Bakery","Electronics","Clothing"];
 const brands = ["BrandA","BrandB","BrandC","BrandD"];
 
-// Generate sample items
+// Generate initial items
 for (let f of ["Ground Floor","First Floor"]) {
-  for (let i = 1; i <= 25; i++) {
+  for (let i = 1; i <= 20; i++) {
     let cat = categories[i % categories.length];
     items.push({
       name: `Item${i}`,
@@ -196,10 +245,35 @@ for (let f of ["Ground Floor","First Floor"]) {
     });
   }
 }
+items.push({name:"Washroom",floor:"Ground Floor",category:"Facility",facility:true,x:50,y:500});
+items.push({name:"Lift",floor:"Ground Floor",category:"Facility",facility:true,x:500,y:500});
+items.push({name:"Trial Room",floor:"First Floor",category:"Facility",facility:true,x:900,y:450});
 
-items.push({name: "Washroom", floor: "Ground Floor", category: "Facility", facility: true, x: 50, y: 500});
-items.push({name: "Lift", floor: "Ground Floor", category: "Facility", facility: true, x: 500, y: 500});
-items.push({name: "Trial Room", floor: "First Floor", category: "Facility", facility: true, x: 900, y: 450});
+// ===== Toggle Mode =====
+function toggleMode() {
+  shopkeeperMode = !shopkeeperMode;
+  document.getElementById("shopkeeperPanel").style.display = shopkeeperMode ? "block" : "none";
+  alert(shopkeeperMode ? "Switched to Shopkeeper Mode" : "Switched to Customer Mode");
+  displayItems();
+}
+
+// ===== Add New Item =====
+function addItem() {
+  const name = document.getElementById("itemName").value;
+  const brand = document.getElementById("itemBrand").value;
+  const cost = parseInt(document.getElementById("itemCost").value);
+  const category = document.getElementById("itemCategory").value;
+  const floor = document.getElementById("itemFloor").value;
+  const x = parseInt(document.getElementById("itemX").value);
+  const y = parseInt(document.getElementById("itemY").value);
+
+  if (!name || !brand || !cost || !x || !y) return alert("Fill all fields!");
+
+  items.push({name, brand, category, floor, cost, x, y, aisle:`A${items.length+1}`});
+  alert(`${name} added successfully!`);
+  displayItems();
+  drawMap();
+}
 
 // ===== Display Items =====
 function displayItems(filtered = items) {
@@ -214,9 +288,20 @@ function displayItems(filtered = items) {
       <p>Brand: ${item.brand}</p>
       <p>Category: ${item.category}</p>
       <p>Cost: ₹${item.cost}</p>
-      <button onclick="toggleSelect('${item.name}', this)">Select</button>`;
+      ${shopkeeperMode 
+        ? `<button onclick="deleteItem('${item.name}')">🗑️ Delete</button>`
+        : `<button onclick="toggleSelect('${item.name}', this)">Select</button>`}`;
     list.appendChild(div);
   });
+}
+
+// ===== Delete Item =====
+function deleteItem(name) {
+  if (confirm(`Delete ${name}?`)) {
+    items = items.filter(i => i.name !== name);
+    displayItems();
+    drawMap();
+  }
 }
 
 // ===== Map Rendering =====
@@ -291,7 +376,7 @@ function speak(text) {
   speechSynthesis.speak(msg);
 }
 
-// ===== Show Route + Voice =====
+// ===== Show Route =====
 function showRoute() {
   if (selectedItems.size === 0) {
     alert("Select at least one item!");
@@ -301,36 +386,28 @@ function showRoute() {
 
   const routeInfo = document.getElementById("routeInfo");
   const selected = items.filter(i => selectedItems.has(i.name));
-
-  // Group by floor
   const grouped = {};
   selected.forEach(i => {
     if (!grouped[i.floor]) grouped[i.floor] = [];
     grouped[i.floor].push(i);
   });
 
-  // Floor info
   let routeText = "";
   for (let floor in grouped) {
     routeText += `🧭 ${floor}: ${grouped[floor].map(i => i.name).join(", ")}<br>`;
   }
-
   routeInfo.innerHTML = routeText;
   routeInfo.style.display = "block";
 
   speak("Starting navigation...");
   for (let floor in grouped) {
     speak(`Now move to ${floor}`);
-    grouped[floor].forEach(item => {
-      speak(`Find ${item.name} in aisle ${item.aisle}, category ${item.category}.`);
-    });
+    grouped[floor].forEach(item => speak(`Find ${item.name} in aisle ${item.aisle}`));
   }
 
-  // Draw route for current floor
   drawMap();
   let floorItems = grouped[currentFloor] || [];
   if (floorItems.length === 0) return;
-
   let pathData = `M${currentLocation.x},${currentLocation.y}`;
   floorItems.forEach(item => pathData += ` L${item.x+30},${item.y+30}`);
   const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
@@ -352,18 +429,5 @@ function showRoute() {
 displayItems();
 drawMap();
 </script>
-  <footer style="text-align:center; padding:20px; background:linear-gradient(90deg,#0078ff,#00d4ff); color:white; border-radius:12px; margin-top:40px;">
-    <p>📱 Scan QR or click below to open the app:</p>
-    <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://vaibhavi03-cloud.github.io/instore/" 
-         alt="QR Code to Smart Supermarket" width="180" height="180"
-         style="border:5px solid white; border-radius:12px; box-shadow:0 0 10px rgba(0,0,0,0.3);">
-    <br><br>
-    <a href="https://vaibhavi03-cloud.github.io/instore/" 
-       target="_blank"
-       style="color:white;background:#0056b3;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:bold;">
-       🌐 Open Smart Supermarket App
-    </a>
-  </footer>
-
 </body>
 </html>
