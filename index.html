@@ -1,19 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Supermarket Navigation</title>
+<style>
+  body {
+    font-family: "Segoe UI", sans-serif;
+    background: linear-gradient(135deg, #eaf4ff, #fefefe);
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  h1 {
+    color: #0066cc;
+    margin-top: 15px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.15);
+  }
+
+  #controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin: 15px 0;
+  }
+
+  select, input, button {
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #0078d7;
+    font-size: 14px;
+  }
+
+  button {
+    background-color: #0078d7;
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+
+  button:hover {
+    background-color: #005fa3;
+  }
+
+  #itemList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 15px;
+    width: 90%;
+    margin-bottom: 15px;
+  }
+
+  .card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    text-align: center;
+    transition: transform 0.3s;
+  }
+
+  .card:hover {
+    transform: scale(1.03);
+  }
+
+  .selected {
+    border: 2px solid #0078d7;
+    background-color: #e6f2ff;
+  }
+
+  #mapContainer {
+    perspective: 1000px;
+  }
+
+  svg {
+    background: #ffffff;
+    border: 2px solid #0078d7;
+    border-radius: 12px;
+    width: 90%;
+    height: 600px;
+    margin-bottom: 10px;
+    transition: transform 1.2s ease-in-out;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+  }
+
+  #routeInfo {
+    display: none;
+    background: #e6f7ff;
+    border: 1px solid #0078d7;
+    border-radius: 10px;
+    padding: 10px;
+    width: 80%;
+    font-size: 16px;
+    margin-bottom: 15px;
+  }
+
+  #legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+    background: white;
+    border-radius: 10px;
+    padding: 10px;
+    width: 80%;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    font-size: 14px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .color-box {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid #999;
+  }
+
+  @keyframes moveDot {
+    to {
+      offset-distance: 100%;
+    }
+  }
+</style>
+</head>
+
+<body>
+  <h1>🏬 Smart Supermarket Navigation System</h1>
+  <div id="controls">
+    <input type="text" id="searchBox" placeholder="🔍 Search item..." oninput="filterItems()">
+    <select id="categoryFilter" onchange="filterItems()">
+      <option value="">All Categories</option>
+      <option value="Fruits">Fruits</option>
+      <option value="Vegetables">Vegetables</option>
+      <option value="Dairy">Dairy</option>
+      <option value="Bakery">Bakery</option>
+      <option value="Electronics">Electronics</option>
+      <option value="Clothing">Clothing</option>
+    </select>
+    <select id="floorFilter" onchange="changeFloor()">
+      <option value="Ground Floor">Ground Floor</option>
+      <option value="First Floor">First Floor</option>
+    </select>
+    <button onclick="showRoute()">🗺️ Show Route</button>
+  </div>
+
+  <div id="itemList"></div>
+  <div id="mapContainer"><svg id="storeMap"></svg></div>
+  <div id="routeInfo"></div>
+
+  <div id="legend">
+    <div class="legend-item"><div class="color-box" style="background:#ffe6e6;"></div> Fruits</div>
+    <div class="legend-item"><div class="color-box" style="background:#e6ffe6;"></div> Vegetables</div>
+    <div class="legend-item"><div class="color-box" style="background:#e6f0ff;"></div> Dairy</div>
+    <div class="legend-item"><div class="color-box" style="background:#fff3e6;"></div> Bakery</div>
+    <div class="legend-item"><div class="color-box" style="background:#e6f7ff;"></div> Electronics</div>
+    <div class="legend-item"><div class="color-box" style="background:#f5e6ff;"></div> Clothing</div>
+    <div class="legend-item"><div class="color-box" style="background:#ffdd57;"></div> Facilities</div>
+  </div>
+
 <script>
-// ===== Setup Data =====
 const svg = document.getElementById("storeMap");
 let currentFloor = "Ground Floor";
 let selectedItems = new Set();
-let currentLocation = {x: 40, y: 550, floor: "Ground Floor"};
+let currentLocation = {x: 60, y: 550, floor: "Ground Floor"};
 let items = [];
 
-// Define categories and sample items
 const categoryData = {
-  "Fruits": ["🍎 Apple", "🍌 Banana", "🍊 Orange", "🍇 Grapes", "🍓 Strawberry", "🍉 Watermelon"],
-  "Vegetables": ["🥔 Potato", "🥕 Carrot", "🧅 Onion", "🧄 Garlic", "🌽 Corn", "🥦 Broccoli"],
-  "Dairy": ["🥛 Milk", "🧀 Cheese", "🍦 Ice Cream", "🍶 Yogurt", "🧈 Butter"],
-  "Bakery": ["🥖 Bread", "🍩 Donut", "🥐 Croissant", "🍪 Cookies", "🍰 Cake"],
-  "Electronics": ["💻 Laptop", "📱 Smartphone", "🎧 Headphones", "📺 TV", "⌚ Smartwatch"],
-  "Clothing": ["👕 T-shirt", "👖 Jeans", "👗 Dress", "🧥 Jacket", "👟 Shoes"]
+  "Ground Floor": {
+    "Fruits": ["🍎 Apple", "🍌 Banana", "🍊 Orange", "🍇 Grapes", "🍓 Strawberry", "🍉 Watermelon"],
+    "Vegetables": ["🥔 Potato", "🥕 Carrot", "🧅 Onion", "🧄 Garlic", "🌽 Corn", "🥦 Broccoli"],
+    "Dairy": ["🥛 Milk", "🧀 Cheese", "🍦 Ice Cream", "🍶 Yogurt", "🧈 Butter"],
+    "Bakery": ["🥖 Bread", "🍩 Donut", "🥐 Croissant", "🍪 Cookies", "🍰 Cake"]
+  },
+  "First Floor": {
+    "Electronics": ["💻 Laptop", "📱 Smartphone", "🎧 Headphones", "📺 TV", "⌚ Smartwatch"],
+    "Clothing": ["👕 T-shirt", "👖 Jeans", "👗 Dress", "🧥 Jacket", "👟 Shoes"]
+  }
 };
 
 const colors = {
@@ -26,37 +196,37 @@ const colors = {
   "Facility": "#ffdd57"
 };
 
-// Generate items by section and position
-let y = 100;
-let x = 100;
-for (let [category, names] of Object.entries(categoryData)) {
-  names.forEach((name, i) => {
-    items.push({
-      name: name,
-      brand: ["BrandA", "BrandB", "BrandC"][i % 3],
-      floor: "Ground Floor",
-      category: category,
-      aisle: `${category[0]}-${i + 1}`,
-      cost: Math.floor(Math.random() * 400) + 50,
-      x: x + (i * 90),
-      y: y
-    });
-  });
-  y += 90;
-  if (y > 450) { y = 100; x += 180; } // Adjust to create new columns after some rows
+function generateItems() {
+  let y = 100, x = 100;
+  for (let floor in categoryData) {
+    for (let [category, names] of Object.entries(categoryData[floor])) {
+      names.forEach((name, i) => {
+        items.push({
+          name,
+          brand: ["FreshFarm", "DailyMart", "PrimeChoice"][i % 3],
+          floor,
+          category,
+          cost: Math.floor(Math.random() * 400) + 50,
+          x: x + (i * 90),
+          y: y
+        });
+      });
+      y += 90;
+      if (y > 400) { y = 100; x += 180; }
+    }
+  }
+  items.push({ name: "🚻 Washroom", floor: "Ground Floor", category: "Facility", x: 60, y: 500 });
+  items.push({ name: "🛗 Lift", floor: "Ground Floor", category: "Facility", x: 550, y: 500 });
+  items.push({ name: "🛗 Lift", floor: "First Floor", category: "Facility", x: 550, y: 500 });
+  items.push({ name: "🧍‍♂️ Trial Room", floor: "First Floor", category: "Facility", x: 900, y: 450 });
 }
+generateItems();
 
-// Add special facilities
-items.push({ name: "🚻 Washroom", floor: "Ground Floor", category: "Facility", facility: true, x: 60, y: 500 });
-items.push({ name: "🛗 Lift", floor: "Ground Floor", category: "Facility", facility: true, x: 550, y: 500 });
-items.push({ name: "🧍‍♂️ Trial Room", floor: "First Floor", category: "Facility", facility: true, x: 900, y: 450 });
-
-// ===== Display Items =====
 function displayItems(filtered = items) {
   const list = document.getElementById("itemList");
   list.innerHTML = "";
   filtered.forEach(item => {
-    if (item.floor !== currentFloor || item.facility) return;
+    if (item.floor !== currentFloor || item.category === "Facility") return;
     const div = document.createElement("div");
     div.className = "card";
     div.innerHTML = `
@@ -69,7 +239,6 @@ function displayItems(filtered = items) {
   });
 }
 
-// ===== Draw Map =====
 function drawMap() {
   svg.innerHTML = "";
   const start = document.createElementNS("http://www.w3.org/2000/svg", "circle");
@@ -101,7 +270,6 @@ function drawMap() {
   });
 }
 
-// ===== Select Item =====
 function toggleSelect(name, btn) {
   if (selectedItems.has(name)) {
     selectedItems.delete(name);
@@ -114,7 +282,6 @@ function toggleSelect(name, btn) {
   }
 }
 
-// ===== Filtering =====
 function filterItems() {
   const search = document.getElementById("searchBox").value.toLowerCase();
   const category = document.getElementById("categoryFilter").value;
@@ -126,14 +293,20 @@ function filterItems() {
   displayItems(filtered);
 }
 
-// ===== Floor Change =====
 function changeFloor() {
-  currentFloor = document.getElementById("floorFilter").value;
-  displayItems();
-  drawMap();
+  const svgEl = document.getElementById("storeMap");
+  svgEl.style.transform = currentFloor === "Ground Floor"
+    ? "rotateX(90deg)"
+    : "rotateX(-90deg)";
+
+  setTimeout(() => {
+    currentFloor = document.getElementById("floorFilter").value;
+    displayItems();
+    drawMap();
+    svgEl.style.transform = "rotateX(0deg)";
+  }, 600);
 }
 
-// ===== Voice Navigation =====
 function speak(text) {
   const msg = new SpeechSynthesisUtterance(text);
   msg.lang = "en-IN";
@@ -141,7 +314,6 @@ function speak(text) {
   speechSynthesis.speak(msg);
 }
 
-// ===== Show Route =====
 function showRoute() {
   if (selectedItems.size === 0) {
     alert("Select at least one item!");
@@ -167,10 +339,8 @@ function showRoute() {
   speak("Starting navigation...");
 
   for (let floor in grouped) {
-    speak(`Now move to ${floor}`);
-    grouped[floor].forEach(item => {
-      speak(`Find ${item.name} in ${item.category} section.`);
-    });
+    speak(`Move to ${floor}`);
+    grouped[floor].forEach(item => speak(`Find ${item.name} in ${item.category} section.`));
   }
 
   drawMap();
@@ -198,3 +368,5 @@ function showRoute() {
 displayItems();
 drawMap();
 </script>
+</body>
+</html>
