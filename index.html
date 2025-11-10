@@ -89,9 +89,7 @@ button:hover {
   box-shadow: 0 6px 12px rgba(0,0,0,0.1);
   transition: all 0.3s ease;
 }
-.card:hover {
-  transform: translateY(-5px);
-}
+.card:hover { transform: translateY(-5px); }
 .card.selected {
   border: 2px solid #0078d7;
   background: linear-gradient(145deg, #d0e8ff, #b0e0ff);
@@ -121,7 +119,7 @@ button:hover {
   display: none;
 }
 
-/* ===== Shopkeeper Mode ===== */
+/* ===== Shopkeeper Controls ===== */
 .shopkeeper-controls {
   display: none;
   background: #f0faff;
@@ -133,6 +131,35 @@ button:hover {
 }
 .shopkeeper-controls input, .shopkeeper-controls select {
   margin: 5px;
+}
+
+/* ===== Login Popup ===== */
+#loginModal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+#loginModal .modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+#loginModal input {
+  font-size: 1rem;
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+}
+#loginModal button {
+  margin-top: 15px;
 }
 
 /* ===== Footer ===== */
@@ -177,7 +204,7 @@ footer {
   <button onclick="toggleMode()" style="background:#ff9f00;">🧾 Switch Mode</button>
 </div>
 
-<!-- ===== Shopkeeper Add/Edit Form ===== -->
+<!-- ===== Shopkeeper Panel ===== -->
 <div class="shopkeeper-controls" id="shopkeeperPanel">
   <h3>🧾 Shopkeeper Mode — Manage Items</h3>
   <input type="text" id="itemName" placeholder="Item Name">
@@ -198,6 +225,19 @@ footer {
   <input type="number" id="itemX" placeholder="X coordinate">
   <input type="number" id="itemY" placeholder="Y coordinate">
   <button onclick="addItem()">➕ Add Item</button>
+  <button onclick="logout()" style="background:red;">🚪 Logout</button>
+</div>
+
+<!-- ===== Login Modal ===== -->
+<div id="loginModal">
+  <div class="modal-content">
+    <h2>🔐 Shopkeeper Login</h2>
+    <p>Enter 4-digit PIN to access shopkeeper mode</p>
+    <input type="password" id="pinInput" maxlength="4" placeholder="••••">
+    <br>
+    <button onclick="verifyPIN()">Login</button>
+    <button onclick="closeLogin()" style="background:red;">Cancel</button>
+  </div>
 </div>
 
 <div class="container">
@@ -221,15 +261,17 @@ footer {
 
 <script>
 let shopkeeperMode = false;
-const svg = document.getElementById("storeMap");
 let currentFloor = "Ground Floor";
 let selectedItems = new Set();
 let currentLocation = {x: 40, y: 550, floor: "Ground Floor"};
+const svg = document.getElementById("storeMap");
+const correctPIN = "1234"; // default pin
+
 let items = [];
 const categories = ["Fruits","Vegetables","Dairy","Bakery","Electronics","Clothing"];
 const brands = ["BrandA","BrandB","BrandC","BrandD"];
 
-// Generate initial items
+// Generate sample data
 for (let f of ["Ground Floor","First Floor"]) {
   for (let i = 1; i <= 20; i++) {
     let cat = categories[i % categories.length];
@@ -249,15 +291,40 @@ items.push({name:"Washroom",floor:"Ground Floor",category:"Facility",facility:tr
 items.push({name:"Lift",floor:"Ground Floor",category:"Facility",facility:true,x:500,y:500});
 items.push({name:"Trial Room",floor:"First Floor",category:"Facility",facility:true,x:900,y:450});
 
-// ===== Toggle Mode =====
+// ===== Login System =====
 function toggleMode() {
-  shopkeeperMode = !shopkeeperMode;
-  document.getElementById("shopkeeperPanel").style.display = shopkeeperMode ? "block" : "none";
-  alert(shopkeeperMode ? "Switched to Shopkeeper Mode" : "Switched to Customer Mode");
+  if (!shopkeeperMode) {
+    document.getElementById("loginModal").style.display = "flex";
+  } else {
+    logout();
+  }
+}
+
+function verifyPIN() {
+  const pin = document.getElementById("pinInput").value;
+  if (pin === correctPIN) {
+    shopkeeperMode = true;
+    document.getElementById("loginModal").style.display = "none";
+    document.getElementById("shopkeeperPanel").style.display = "block";
+    alert("✅ Access Granted. Shopkeeper Mode Enabled!");
+    displayItems();
+  } else {
+    alert("❌ Incorrect PIN! Access Denied.");
+  }
+}
+
+function closeLogin() {
+  document.getElementById("loginModal").style.display = "none";
+}
+
+function logout() {
+  shopkeeperMode = false;
+  document.getElementById("shopkeeperPanel").style.display = "none";
+  alert("👋 Logged out. Back to Customer Mode.");
   displayItems();
 }
 
-// ===== Add New Item =====
+// ===== Add / Delete Items =====
 function addItem() {
   const name = document.getElementById("itemName").value;
   const brand = document.getElementById("itemBrand").value;
@@ -268,11 +335,18 @@ function addItem() {
   const y = parseInt(document.getElementById("itemY").value);
 
   if (!name || !brand || !cost || !x || !y) return alert("Fill all fields!");
-
   items.push({name, brand, category, floor, cost, x, y, aisle:`A${items.length+1}`});
   alert(`${name} added successfully!`);
   displayItems();
   drawMap();
+}
+
+function deleteItem(name) {
+  if (confirm(`Delete ${name}?`)) {
+    items = items.filter(i => i.name !== name);
+    displayItems();
+    drawMap();
+  }
 }
 
 // ===== Display Items =====
@@ -295,16 +369,7 @@ function displayItems(filtered = items) {
   });
 }
 
-// ===== Delete Item =====
-function deleteItem(name) {
-  if (confirm(`Delete ${name}?`)) {
-    items = items.filter(i => i.name !== name);
-    displayItems();
-    drawMap();
-  }
-}
-
-// ===== Map Rendering =====
+// ===== Map + Navigation =====
 function drawMap() {
   svg.innerHTML = "";
   const start = document.createElementNS("http://www.w3.org/2000/svg", "circle");
@@ -336,7 +401,7 @@ function drawMap() {
   });
 }
 
-// ===== Select Item =====
+// ===== Helper Functions =====
 function toggleSelect(name, btn) {
   if (selectedItems.has(name)) {
     selectedItems.delete(name);
@@ -349,7 +414,6 @@ function toggleSelect(name, btn) {
   }
 }
 
-// ===== Filtering =====
 function filterItems() {
   const search = document.getElementById("searchBox").value.toLowerCase();
   const category = document.getElementById("categoryFilter").value;
@@ -361,29 +425,17 @@ function filterItems() {
   displayItems(filtered);
 }
 
-// ===== Floor Change =====
 function changeFloor() {
   currentFloor = document.getElementById("floorFilter").value;
   displayItems();
   drawMap();
 }
 
-// ===== Voice Output =====
-function speak(text) {
-  const msg = new SpeechSynthesisUtterance(text);
-  msg.lang = "en-IN";
-  msg.rate = 1;
-  speechSynthesis.speak(msg);
-}
-
-// ===== Show Route =====
 function showRoute() {
   if (selectedItems.size === 0) {
     alert("Select at least one item!");
-    speak("Please select at least one item to navigate.");
     return;
   }
-
   const routeInfo = document.getElementById("routeInfo");
   const selected = items.filter(i => selectedItems.has(i.name));
   const grouped = {};
@@ -391,19 +443,11 @@ function showRoute() {
     if (!grouped[i.floor]) grouped[i.floor] = [];
     grouped[i.floor].push(i);
   });
-
   let routeText = "";
-  for (let floor in grouped) {
+  for (let floor in grouped)
     routeText += `🧭 ${floor}: ${grouped[floor].map(i => i.name).join(", ")}<br>`;
-  }
   routeInfo.innerHTML = routeText;
   routeInfo.style.display = "block";
-
-  speak("Starting navigation...");
-  for (let floor in grouped) {
-    speak(`Now move to ${floor}`);
-    grouped[floor].forEach(item => speak(`Find ${item.name} in aisle ${item.aisle}`));
-  }
 
   drawMap();
   let floorItems = grouped[currentFloor] || [];
@@ -413,21 +457,13 @@ function showRoute() {
   const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
   path.setAttribute("d", pathData);
   path.setAttribute("fill", "none");
-  path.setAttribute("stroke", "#0078d7");
-  path.setAttribute("stroke-width", "4");
-  path.setAttribute("stroke-dasharray", "6,8");
+  path.setAttribute("stroke", "red");
+  path.setAttribute("stroke-width", "3");
+  path.setAttribute("stroke-dasharray", "8,6");
   svg.appendChild(path);
-
-  const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-  dot.setAttribute("r", 8);
-  dot.setAttribute("fill", "red");
-  dot.style.offsetPath = `path('${pathData}')`;
-  dot.style.animation = "moveDot 6s linear infinite";
-  svg.appendChild(dot);
 }
 
-displayItems();
-drawMap();
+window.onload = () => { displayItems(); drawMap(); };
 </script>
 </body>
 </html>
