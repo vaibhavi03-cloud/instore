@@ -1,1 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Smart Mall Navigator Pro — Multi-item Routing & Voice Guidance</title>
+<style>
+  :root{
+    --accent:#673ab7;
+    --accent-2:#4caf50;
+    --bg-grad: linear-gradient(135deg,#e0f7fa,#ede7f6);
+  }
+  *{box-sizing:border-box;font-family:"Poppins",sans-serif}
+  body{margin:0;background:var(--bg-grad);color:#111}
+  header{
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));
+    color:#fff;padding:14px;text-align:center;font-size:1.25rem;letter-spacing:0.6px;
+    box-shadow:0 6px 20px rgba(0,0,0,0.12);
+  }
 
+  /* Layout */
+  .app {
+    display:flex;
+    gap:12px;
+    padding:12px;
+    height: calc(100vh - 72px);
+  }
+  .panel {
+    width:320px;
+    background:rgba(255,255,255,0.95);
+    border-radius:12px;
+    padding:12px;
+    box-shadow:0 6px 18px rgba(0,0,0,0.08);
+    overflow:auto;
+  }
+  .map-wrap{flex:1;position:relative;min-width:300px}
+  #mall-map{
+    background:#f6fff3;height:100%;border-radius:12px;position:relative;border:1px solid rgba(0,0,0,0.06);
+    overflow:hidden;
+  }
+
+  /* Floor buttons */
+  .floor-selector{text-align:center;margin-bottom:8px}
+  .floor-selector button{
+    margin:4px;padding:8px 12px;border-radius:8px;border:none;background:var(--accent-2);color:#fff;font-weight:600;cursor:pointer;
+  }
+
+  /* Shop icons */
+  .shop{position:absolute;background:#fff;border-radius:10px;padding:6px 8px;border:2px solid var(--accent-2);font-size:12px;box-shadow:0 4px 10px rgba(0,0,0,0.08);cursor:pointer;transform:translate(-50%,-50%);}
+  .shop:hover{transform:translate(-50%,-50%) scale(1.06)}
+  .facility{position:absolute;background:#fff7e6;border-radius:10px;padding:6px 8px;border:2px solid #f6b93b;font-size:12px;transform:translate(-50%,-50%)}
+
+  /* route visuals */
+  .route-line{position:absolute;height:4px;background:var(--accent);transform-origin:left center;opacity:0.9;border-radius:2px;z-index:40}
+  .direction-arrow{position:absolute;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:10px solid var(--accent);z-index:45;animation:arrowFloat 1.4s linear infinite}
+  @keyframes arrowFloat{0%{transform:translateY(0)}50%{transform:translateY(-8px)}100%{transform:translateY(0)}}
+
+  /* moving person */
+  #walker{
+    position:absolute;width:28px;height:28px;border-radius:50%;background:var(--accent-2);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;
+    transform:translate(-50%,-50%);z-index:60;box-shadow:0 6px 14px rgba(0,0,0,0.2)
+  }
+
+  /* controls */
+  .controls{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+  .controls button{flex:1;padding:8px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
+  .controls button.secondary{background:#ff6f61}
+  .small{font-size:13px;padding:6px 8px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer}
+
+  /* shop list */
+  .shop-item{display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.05);margin-bottom:8px;background:#fff}
+  .shop-item .meta{flex:1}
+  .status{display:block;font-size:12px;margin-top:4px}
+  .instock{color:#2e7d32}.outstock{color:#c62828}.discount{color:#1565c0}.sale{color:#e64a19}
+  .price{font-weight:800;margin-left:6px;color:#000}
+
+  /* responsive */
+  @media(max-width:900px){.app{flex-direction:column}.panel{width:100%;height:36vh;overflow:auto}.map-wrap{height:64vh}}
+</style>
+</head>
+<body>
+<header>🛍 Smart Mall Navigator Pro — Multi-item Routing & Voice Guidance</header>
+
+<div class="app">
+  <!-- Left panel -->
+  <div class="panel" id="leftPanel">
+    <div style="display:flex;gap:8px;align-items:center;justify-content:space-between">
+      <strong>Shop / Items</strong>
+      <div style="text-align:right;font-size:12px;color:#444">Select items → Start route</div>
+    </div>
+
+    <div style="margin-top:8px">
+      <label style="font-size:13px">Current location: <button class="small" id="setCurBtn">Tap on map</button></label>
+      <div id="curCoords" style="font-size:12px;color:#555;margin-top:6px">Not set — click the blue marker on map to change</div>
+    </div>
+
+    <hr style="margin:10px 0" />
+
+    <div id="shopList"></div>
+
+    <div style="margin-top:8px">
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="small" id="selectAll">Select All</button>
+        <button class="small" id="deselectAll">Clear</button>
+        <button class="small" id="addRandom">Add Random List</button>
+      </div>
+
+      <div class="controls" style="margin-top:10px">
+        <button id="startRoute">▶ Start Route</button>
+        <button id="pauseRoute" class="secondary">⏸ Pause</button>
+        <button id="stopRoute" class="secondary">■ Stop</button>
+      </div>
+
+      <div style="margin-top:8px;font-size:13px;color:#444">
+        <label><input type="checkbox" id="voiceToggle" checked /> Voice guidance</label>
+      </div>
+
+      <div style="margin-top:12px;font-size:13px;color:#333">
+        <strong>Route plan preview:</strong>
+        <ol id="routePlan" style="padding-left:18px;margin-top:6px"></ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- Map -->
+  <div class="map-wrap">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px">
+      <div class="floor-selector">
+        <button onclick="showFloor('ground')">Ground Floor</button>
+        <button onclick="showFloor('first')">1st Floor</button>
+        <button onclick="showFloor('second')">2nd Floor</button>
+      </div>
+      <div>
+        <button class="small" onclick="centerOnCurrent()">Center</button>
+        <button class="small" onclick="clearRoutes()">Clear</button>
+        <button class="small" onclick="voiceSpeak('Help: click shops to select, click map to set current location.')">Help</button>
+      </div>
+    </div>
+
+    <div id="mall-map">
+      <!-- Floors (absolute-positioned items) -->
+      <div class="floor active" id="ground" style="width:100%;height:calc(100% - 60px);position:relative">
+        <!-- Shops & facilities inserted by JS -->
+      </div>
+
+      <div class="floor" id="first" style="width:100%;height:calc(100% - 60px);position:relative"></div>
+      <div class="floor" id="second" style="width:100%;height:calc(100% - 60px);position:relative"></div>
+
+      <!-- Current location marker (clickable) -->
+      <div id="currentLocation" title="Tap to set current location" style="position:absolute;left:50%;top:78%;transform:translate(-50%,-50%);z-index:70">
+        <div style="width:44px;height:44px;border-radius:50%;background:#2196f3;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 16px rgba(0,0,0,0.18);cursor:pointer" onclick="enableSetCurrent(event)">
+          📍
+        </div>
+      </div>
+
+      <!-- Walker (moving person) -->
+      <div id="walker" style="left:-100px;top:-100px;display:none">You</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ----------------------
+   Data model - shops
+   ---------------------- */
+const LIFT = {id:'lift', name:'Lift', floor:'ground', x:450, y:300};
+const SHOPS = [
+  // ground
+  {id:'dmart', name:'D-Mart (Apples ₹120/kg)', floor:'ground', x:80, y:100, price:120, status:'instock'},
+  {id:'reliance', name:'Reliance Fresh (Bananas ₹60/doz)', floor:'ground', x:220, y:100, price:60, status:'discount'},
+  {id:'bigbasket', name:'BigBasket (Oranges ₹90/kg)', floor:'ground', x:350, y:120, price:90, status:'sale'},
+  {id:'spencers', name:'Spencer\'s (Grapes ₹140/kg)', floor:'ground', x:140, y:200, price:140, status:'instock'},
+  {id:'nature', name:'Nature\'s Basket (Premium Nuts ₹499)', floor:'ground', x:320, y:220, price:499, status:'instock'},
+
+  // first
+  {id:'zara', name:'Zara (T-Shirt ₹999)', floor:'first', x:120, y:120, price:999, status:'discount'},
+  {id:'hm', name:'H&M (Jeans ₹1299)', floor:'first', x:250, y:150, price:1299, status:'instock'},
+  {id:'pantaloons', name:'Pantaloons (Dress ₹1799)', floor:'first', x:400, y:200, price:1799, status:'outstock'},
+  {id:'only', name:'ONLY (Skirt ₹899)', floor:'first', x:320, y:90, price:899, status:'discount'},
+  {id:'levis', name:'Levi\'s (Denim ₹2499)', floor:'first', x:200, y:250, price:2499, status:'instock'},
+
+  // second
+  {id:'mcd', name:'McDonald\'s (Meal ₹249)', floor:'second', x:100, y:100, price:249, status:'sale'},
+  {id:'dom', name:'Domino\'s (Pizza ₹399)', floor:'second', x:260, y:140, price:399, status:'discount'},
+  {id:'ccd', name:'Café Coffee Day (Coffee ₹149)', floor:'second', x:400, y:200, price:149, status:'instock'},
+  {id:'kfc', name:'KFC (Buckets ₹599)', floor:'second', x:180, y:200, price:599, status:'sale'},
+  {id:'sbarro', name:'Sbarro (Pasta ₹329)', floor:'second', x:320, y:80, price:329, status:'instock'}
+];
+
+const FACILITIES = [
+  {id:'wash_g', name:'Washroom (Ground)', floor:'ground', x:30, y:300, icon:'🚻'},
+  {id:'lift_g', name:'Lift (Ground)', floor:'ground', x:450, y:300, icon:'🛗'},
+  {id:'trial_1', name:'Trial Room (1st)', floor:'first', x:30, y:300, icon:'🚻'},
+  {id:'lift_1', name:'Lift (1st)', floor:'first', x:450, y:300, icon:'🛗'},
+  {id:'food_2', name:'Food Court (2nd)', floor:'second', x:30, y:300, icon:'🍽'},
+  {id:'lift_2', name:'Lift (2nd)', floor:'second', x:450, y:300, icon:'🛗'},
+];
+
+/* ----------------------
+   State
+   ---------------------- */
+let current = {x: window.innerWidth/2, y: window.innerHeight*0.8, floor:'ground'}; // default
+let selectingCurrent = false;
+let selectedIds = new Set();
+let route = []; // ordered waypoints {id,name,floor,x,y}
+let anim = {running:false, paused:false, idx:0, t:0, speed:120}; // px/sec
+let routeElements = []; // DOM elements for lines/arrows for cleanup
+
+/* ----------------------
+   DOM refs
+   ---------------------- */
+const shopListDiv = document.getElementById('shopList');
+const routePlanOl = document.getElementById('routePlan');
+const walker = document.getElementById('walker');
+const mallMap = document.getElementById('mall-map');
+const curCoordsDiv = document.getElementById('curCoords');
+
+/* ----------------------
+   Render shops & facilities onto floors
+   ---------------------- */
+function renderMap(){
+  ['ground','first','second'].forEach(f=>{
+    const floorDiv = document.getElementById(f);
+    floorDiv.innerHTML = ''; // clear
+  });
+
+  FACILITIES.forEach(f=>{
+    const node = document.createElement('div');
+    node.className = 'facility';
+    node.style.left = f.x + 'px';
+    node.style.top = f.y + 'px';
+    node.innerHTML = `${f.icon} ${f.name}`;
+    document.getElementById(f.floor).appendChild(node);
+  });
+
+  SHOPS.forEach(s=>{
+    const node = document.createElement('div');
+    node.className = 'shop';
+    node.style.left = s.x + 'px';
+    node.style.top = s.y + 'px';
+    node.id = 'map_' + s.id;
+    node.innerHTML = `${iconFor(s)} ${s.name}<div class="status ${s.status}">${statusText(s.status)} <span class="price">₹${s.price}</span></div>`;
+    node.onclick = ()=> toggleSelect(s.id);
+    document.getElementById(s.floor).appendChild(node);
+  });
+
+  // current marker stays on top
+  updateCurrentMarker();
+}
+
+/* small helpers for display */
+function iconFor(s){
+  if(s.name.toLowerCase().includes('mc')||s.name.toLowerCase().includes('kfc')) return '🍔';
+  if(s.name.toLowerCase().includes('coffee')||s.name.toLowerCase().includes('café')) return '☕';
+  if(s.name.toLowerCase().includes('pizza')) return '🍕';
+  if(s.name.toLowerCase().includes('jeans')||s.name.toLowerCase().includes('zara')) return '👕';
+  return '🛍';
+}
+function statusText(st){ return st==='instock'?'In Stock':st==='outstock'?'Out of Stock':st==='discount'?'Discount':'Sale' }
+
+/* ----------------------
+   Shop list panel
+   ---------------------- */
+function renderShopList(){
+  shopListDiv.innerHTML = '';
+  SHOPS.forEach(s=>{
+    const item = document.createElement('div');
+    item.className = 'shop-item';
+    item.innerHTML = `
+      <input type="checkbox" id="cb_${s.id}" ${selectedIds.has(s.id)?'checked':''} />
+      <div class="meta">
+        <div style="font-weight:700">${s.name} <span class="price">₹${s.price}</span></div>
+        <div class="status ${s.status}">${statusText(s.status)} • ${s.floor}</div>
+      </div>
+      <div style="text-align:right">
+        <button class="small" onclick="focusShop('${s.id}')">View</button>
+        <br/>
+        <button class="small" onclick="toggleSelect('${s.id}')">${selectedIds.has(s.id)?'Remove':'Add'}</button>
+      </div>`;
+    shopListDiv.appendChild(item);
+    document.getElementById('cb_'+s.id).addEventListener('change', (e)=>{
+      if(e.target.checked) selectedIds.add(s.id); else selectedIds.delete(s.id);
+      updateRoutePreview();
+    });
+  });
+}
+
+/* ----------------------
+   Selection helpers
+   ---------------------- */
+function toggleSelect(id){
+  if(selectedIds.has(id)) selectedIds.delete(id); else selectedIds.add(id);
+  renderShopList();
+  updateRoutePreview();
+}
+document.getElementById('selectAll').onclick = ()=> { SHOPS.forEach(s=>selectedIds.add(s.id)); renderShopList(); updateRoutePreview();}
+document.getElementById('deselectAll').onclick = ()=> { selectedIds.clear(); renderShopList(); updateRoutePreview();}
+document.getElementById('addRandom').onclick = ()=>{
+  selectedIds.clear();
+  // pick 4 random
+  const shuffled = SHOPS.slice().sort(()=>0.5-Math.random()).slice(0,4);
+  shuffled.forEach(s=>selectedIds.add(s.id));
+  renderShopList(); updateRoutePreview();
+}
+
+/* ----------------------
+   Current location selection
+   ---------------------- */
+function enableSetCurrent(e){
+  selectingCurrent = true;
+  voiceSpeak('Tap anywhere on the map to set your current location.');
+}
+document.getElementById('mall-map').addEventListener('click', function(ev){
+  // if click on control/UI buttons, ignore (check target)
+  if(ev.target.closest('.small') || ev.target.closest('.shop') || ev.target.closest('.floor-selector') ) return;
+  if(selectingCurrent){
+    const rect = mallMap.getBoundingClientRect();
+    const x = ev.clientX - rect.left;
+    const y = ev.clientY - rect.top;
+    // set default floor to currently visible floor
+    const floor = document.querySelector('.floor.active').id;
+    current = {x,y,floor};
+    selectingCurrent = false;
+    updateCurrentMarker();
+    updateCurCoordsText();
+    voiceSpeak('Current location set.');
+  }
+});
+
+function updateCurrentMarker(){
+  const marker = document.getElementById('currentLocation');
+  marker.style.left = (current.x || window.innerWidth/2) + 'px';
+  marker.style.top = (current.y || window.innerHeight*0.8) + 'px';
+}
+
+/* show current coords */
+function updateCurCoordsText(){
+  curCoordsDiv.innerText = `x: ${Math.round(current.x)} px, y: ${Math.round(current.y)} px, floor: ${current.floor}`;
+}
+
+/* allow the "Tap on map" button to enable selection mode */
+document.getElementById('setCurBtn').addEventListener('click', ()=>{ selectingCurrent=true; voiceSpeak('Tap on the map to set current location'); });
+
+/* center map helper (just scrolls into view for single-floor layout) */
+function centerOnCurrent(){
+  const floorDiv = document.getElementById(current.floor);
+  // no real map scrolling layered; we ensure marker visible by small animation
+  const marker = document.getElementById('currentLocation');
+  marker.style.transition = 'transform 0.3s';
+  marker.style.transform = 'translate(-50%,-50%) scale(1.05)';
+  setTimeout(()=> marker.style.transform = 'translate(-50%,-50%) scale(1)',300);
+}
+
+/* ----------------------
+   Route planning (greedy nearest neighbor)
+   ---------------------- */
+function updateRoutePreview(){
+  // create waypoints from selectedIds
+  const selected = SHOPS.filter(s=> selectedIds.has(s.id));
+  // greedy NN starting from current
+  const waypoints = planGreedyRoute(current, selected);
+  routePlanOl.innerHTML = '';
+  waypoints.forEach(w=>{
+    const li = document.createElement('li');
+    li.innerText = `${w.name} (${w.floor})`;
+    routePlanOl.appendChild(li);
+  });
+  // store preview in route variable but do not animate yet
+  route = waypoints;
+}
+
+function planGreedyRoute(start, selectedShops){
+  // Each waypoint: {id,name,floor,x,y}
+  const remaining = selectedShops.map(s=>({id:s.id,name:s.name,floor:s.floor,x:s.x,y:s.y}));
+  let cur = {x:start.x,y:start.y,floor:start.floor};
+  const plan = [];
+  while(remaining.length){
+    // compute distances; if different floor, distance includes to-lift and from-lift cost
+    let bestIdx = 0, bestDist = Infinity;
+    for(let i=0;i<remaining.length;i++){
+      const cand = remaining[i];
+      const d = effectiveDistance(cur,cand);
+      if(d < bestDist){ bestDist = d; bestIdx = i; }
+    }
+    const chosen = remaining.splice(bestIdx,1)[0];
+    // if floor differs, insert lift waypoint(s) (lift at each floor)
+    if(chosen.floor !== cur.floor){
+      // add lift on current floor
+      const liftCurrent = FACILITIES.find(f=>f.id.startsWith('lift') && f.floor === cur.floor);
+      const liftTarget = FACILITIES.find(f=>f.id.startsWith('lift') && f.floor === chosen.floor);
+      if(liftCurrent){
+        plan.push({id:liftCurrent.id,name:liftCurrent.name,floor:liftCurrent.floor,x:liftCurrent.x,y:liftCurrent.y,meta:'lift'});
+      }
+      // change floor (simulate)
+      if(liftTarget){
+        plan.push({id:liftTarget.id,name:liftTarget.name,floor:liftTarget.floor,x:liftTarget.x,y:liftTarget.y,meta:'lift-arrive'});
+      }
+    }
+    plan.push(chosen);
+    cur = {x:chosen.x,y:chosen.y,floor:chosen.floor};
+  }
+  return plan;
+}
+
+/* distance helper: if floor differs, add penalty so lift will be used */
+function effectiveDistance(a,b){
+  const dx = (b.x - a.x), dy = (b.y - a.y);
+  let d = Math.sqrt(dx*dx + dy*dy);
+  if(a.floor !== b.floor) d += 300; // penalty representing floor travel via lift/stairs
+  return d;
+}
+
+/* ----------------------
+   Visualization helpers: draw route lines & arrows
+   ---------------------- */
+function clearRoutes(){
+  routeElements.forEach(el=>el.remove());
+  routeElements = [];
+  // hide walker
+  walker.style.display = 'none';
+  anim.running = false; anim.paused = false; anim.idx = 0; anim.t = 0;
+}
+
+function drawFullRoute(plan){
+  clearRoutes();
+  const mapRect = mallMap.getBoundingClientRect();
+  // start from current
+  let sx = current.x, sy = current.y;
+  let sf = current.floor;
+  for(let i=0;i<plan.length;i++){
+    const wp = plan[i];
+    // create line from sx,sy to wp.x,wp.y on the map surface of the floor where the start is located
+    // Only draw if on same floor as start; if floor differs we draw up to lift node which will be included as waypoint
+    const line = document.createElement('div'); line.className='route-line';
+    const dx = wp.x - sx; const dy = wp.y - sy;
+    const len = Math.sqrt(dx*dx + dy*dy);
+    const angle = Math.atan2(dy,dx)*180/Math.PI;
+    line.style.width = len + 'px';
+    line.style.left = sx + 'px';
+    line.style.top = sy + 'px';
+    line.style.transform = `rotate(${angle}deg)`;
+    line.style.zIndex = 35;
+    mallMap.appendChild(line);
+    routeElements.push(line);
+
+    // arrow at midpoint
+    const arrow = document.createElement('div'); arrow.className='direction-arrow';
+    arrow.style.left = (sx + dx/2) + 'px';
+    arrow.style.top = (sy + dy/2) + 'px';
+    mallMap.appendChild(arrow);
+    routeElements.push(arrow);
+
+    sx = wp.x; sy = wp.y; sf = wp.floor;
+  }
+}
+
+/* ----------------------
+   Animation: move walker along route
+   ---------------------- */
+function startAnimation(){
+  if(route.length===0){ voiceSpeak('No route to start. Please select items first.'); return; }
+  // build full sequence of points (array of {x,y,floor,name,meta})
+  const seq = route.map(rp => ({x:rp.x,y:rp.y,floor:rp.floor,name:rp.name,meta:rp.meta || ''}));
+  // set walker visible and place at current
+  walker.style.display = 'flex';
+  walker.style.left = current.x + 'px';
+  walker.style.top = current.y + 'px';
+  walker.innerText = 'You';
+  anim.running = true; anim.paused = false; anim.idx = 0; anim.t = 0;
+  drawFullRoute(seq)
