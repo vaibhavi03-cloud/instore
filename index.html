@@ -3,179 +3,138 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>🛍️ Smart In-Store Navigator Pro</title>
+<title>🛒 Smart In-Store Navigator Pro v3</title>
 <style>
 /* ===== General UI ===== */
 body {
   margin: 0;
   font-family: "Poppins", sans-serif;
-  background: linear-gradient(135deg, #e0f7fa, #ede7f6);
+  background: linear-gradient(135deg,#e0f7fa,#ede7f6);
   color: #333;
   overflow-x: hidden;
 }
 header {
-  background: linear-gradient(90deg, #673ab7, #4caf50);
+  background: linear-gradient(90deg,#673ab7,#4caf50);
   color: #fff;
   padding: 1rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
-h1 {
-  margin: 0;
-  font-size: 1.4rem;
-}
+h1 {margin:0;font-size:1.4rem;}
 
 /* ===== Toggle Switch ===== */
 .toggle-wrapper {
   position: relative;
   display: inline-block;
-  width: 60px;
-  height: 32px;
+  width: 60px; height: 32px;
   margin-left: 10px;
 }
-.toggle-checkbox {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
+.toggle-checkbox {opacity:0;width:0;height:0;}
 .toggle-label {
-  position: absolute;
-  cursor: pointer;
-  inset: 0;
-  background: linear-gradient(135deg, #cbd5e1, #94a3b8);
-  border-radius: 9999px;
-  transition: all 0.4s ease;
-  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.2);
+  position:absolute;cursor:pointer;inset:0;
+  background:linear-gradient(135deg,#cbd5e1,#94a3b8);
+  border-radius:9999px;
+  transition:all .4s ease;
+  box-shadow:inset 0 0 6px rgba(0,0,0,0.2);
 }
 .toggle-label::before {
-  content: "";
-  position: absolute;
-  height: 24px;
-  width: 24px;
-  left: 4px;
-  bottom: 4px;
-  background: white;
-  border-radius: 50%;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  content:"";position:absolute;height:24px;width:24px;
+  left:4px;bottom:4px;background:white;border-radius:50%;
+  transition:all .4s cubic-bezier(0.4,0,0.2,1);
+  box-shadow:0 2px 6px rgba(0,0,0,0.3);
 }
 .toggle-checkbox:checked + .toggle-label {
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-  box-shadow: 0 0 12px rgba(34, 197, 94, 0.7);
+  background:linear-gradient(135deg,#22c55e,#16a34a);
+  box-shadow:0 0 12px rgba(34,197,94,0.7);
 }
 .toggle-checkbox:checked + .toggle-label::before {
-  transform: translateX(28px);
-  background: radial-gradient(circle at 30% 30%, #fff, #e6ffe6);
+  transform:translateX(28px);
+  background:radial-gradient(circle at 30% 30%,#fff,#e6ffe6);
 }
 
 /* ===== Map ===== */
 .map-container {
-  position: relative;
-  width: 90%;
-  height: 500px;
-  margin: 2rem auto;
-  background: #fff;
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  position:relative;width:90%;height:500px;
+  margin:2rem auto;background:#fff;border-radius:20px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.1);
+  overflow:hidden;
 }
-.mall-map {
-  width: 100%;
-  height: 100%;
-}
+.mall-map {width:100%;height:100%;}
 .shopper {
-  position: absolute;
-  width: 35px;
-  height: 35px;
-  background: url('https://cdn-icons-png.flaticon.com/512/2838/2838912.png') no-repeat center/contain;
-  transform: translate(-50%, -50%);
-  transition: all 1.2s ease;
+  position:absolute;width:35px;height:35px;
+  background:url('https://cdn-icons-png.flaticon.com/512/2838/2838912.png') no-repeat center/contain;
+  transform:translate(-50%,-50%);
+  transition:all 1.5s ease;
 }
 
-/* ===== Dropdowns ===== */
-.control-panel {
-  text-align: center;
-  margin: 1rem;
+/* ===== Controls ===== */
+.control-panel {text-align:center;margin:1rem;}
+select,button {
+  font-size:1rem;padding:0.6rem 1rem;margin:0.5rem;
+  border-radius:10px;border:none;outline:none;
+  background:#f3f4f6;box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  transition:all .3s ease;
 }
-select, button {
-  font-size: 1rem;
-  padding: 0.6rem 1rem;
-  margin: 0.5rem;
-  border-radius: 10px;
-  border: none;
-  outline: none;
-  background: #f3f4f6;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  transition: all 0.3s ease;
-}
-button:hover, select:hover {
-  transform: scale(1.05);
-}
-
-/* ===== Voice Button ===== */
+button:hover,select:hover {transform:scale(1.05);}
 .voice-btn {
-  background: linear-gradient(90deg, #4caf50, #2e7d32);
-  color: white;
-  border: none;
-  border-radius: 10px;
-  padding: 0.7rem 1.2rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  background:linear-gradient(90deg,#4caf50,#2e7d32);
+  color:white;border:none;border-radius:10px;
+  padding:0.7rem 1.2rem;cursor:pointer;transition:all .3s ease;
 }
 .voice-btn:hover {
-  background: linear-gradient(90deg, #43a047, #1b5e20);
-  transform: scale(1.05);
+  background:linear-gradient(90deg,#43a047,#1b5e20);
+  transform:scale(1.05);
 }
 
 /* ===== Path Animation ===== */
 .route-path {
-  stroke: #4caf50;
-  stroke-width: 4;
-  fill: none;
-  stroke-dasharray: 300;
-  stroke-dashoffset: 300;
-  animation: dash 2s linear forwards;
+  stroke:#4caf50;stroke-width:4;fill:none;
+  stroke-dasharray:300;stroke-dashoffset:300;
+  animation:dash 2s linear forwards;
 }
-@keyframes dash {
-  to { stroke-dashoffset: 0; }
-}
+@keyframes dash {to {stroke-dashoffset:0;}}
 
-/* ===== Modal (Glass) ===== */
+/* ===== Modal ===== */
 .modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  backdrop-filter: blur(10px);
-  background: rgba(0, 0, 0, 0.4);
-  align-items: center;
-  justify-content: center;
-  animation: fadeIn 0.4s ease forwards;
+  display:none;position:fixed;inset:0;z-index:100;
+  backdrop-filter:blur(10px);
+  background:rgba(0,0,0,0.4);
+  align-items:center;justify-content:center;
 }
-.modal.is-open { display: flex; }
+.modal.is-open {display:flex;}
 .modal-content {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(20px);
-  border-radius: 20px;
-  padding: 2rem 3rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  color: #fff;
-  text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background:rgba(255,255,255,0.15);
+  backdrop-filter:blur(20px);
+  border-radius:20px;
+  padding:2rem 3rem;
+  box-shadow:0 8px 24px rgba(0,0,0,0.3);
+  color:#fff;text-align:center;
+  border:1px solid rgba(255,255,255,0.2);
+  animation:fadeIn .4s ease;
 }
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+@keyframes fadeIn {from{opacity:0;transform:scale(.95);}to{opacity:1;transform:scale(1);}}
+/* ===== Voice Icon ===== */
+.voice-icon {
+  width:45px;height:45px;border-radius:50%;
+  background:linear-gradient(135deg,#4caf50,#2e7d32);
+  display:flex;align-items:center;justify-content:center;
+  position:fixed;bottom:25px;right:25px;cursor:pointer;
+  box-shadow:0 6px 16px rgba(0,0,0,0.3);
+  animation:pulse 2s infinite;
+}
+.voice-icon svg {fill:white;width:24px;height:24px;}
+@keyframes pulse {
+  0%,100%{transform:scale(1);}
+  50%{transform:scale(1.1);}
 }
 </style>
 </head>
-
 <body>
 <header>
-  <h1>🛒 Smart In-Store Navigator Pro</h1>
+  <h1>🛍️ Smart In-Store Navigator Pro</h1>
   <div>
     Voice Nav
     <div class="toggle-wrapper">
@@ -187,7 +146,7 @@ button:hover, select:hover {
 
 <!-- Controls -->
 <div class="control-panel">
-  <label>📍 Current Location:</label>
+  <label>📍 Start:</label>
   <select id="startSelect">
     <option value="entrance">Entrance</option>
     <option value="groceries">Groceries</option>
@@ -195,15 +154,15 @@ button:hover, select:hover {
     <option value="foodcourt">Food Court</option>
   </select>
 
-  <label>🎯 Destination:</label>
-  <select id="endSelect">
+  <label>🛒 Multi-Stop Destinations:</label>
+  <select id="destSelect" multiple size="4">
     <option value="groceries">Groceries</option>
     <option value="clothing">Clothing</option>
     <option value="foodcourt">Food Court</option>
     <option value="electronics">Electronics</option>
   </select>
-
-  <button class="voice-btn" id="startBtn">Start Navigation</button>
+  <br>
+  <button class="voice-btn" id="startBtn">Start Multi-Stop Route</button>
 </div>
 
 <!-- Map -->
@@ -233,9 +192,16 @@ button:hover, select:hover {
 <!-- Modal -->
 <div class="modal" id="modal">
   <div class="modal-content">
-    <h2>Navigation Complete ✅</h2>
-    <p>You’ve arrived at your destination.</p>
+    <h2>All Stops Visited ✅</h2>
+    <p>You’ve completed your shopping route!</p>
   </div>
+</div>
+
+<!-- Voice Command Icon -->
+<div class="voice-icon" id="voiceIcon" title="Tap to speak">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2ZM11 18.93V22h2v-3.07A8.001 8.001 0 0 0 20 11h-2a6 6 0 1 1-12 0H4a8.001 8.001 0 0 0 7 7.93Z"/>
+  </svg>
 </div>
 
 <script>
@@ -246,55 +212,83 @@ const locations = {
   foodcourt: {x:250, y:120},
   electronics: {x:400, y:100}
 };
-
 const shopper = document.getElementById('shopper');
 const path = document.getElementById('routePath');
 const modal = document.getElementById('modal');
 const voiceToggle = document.getElementById('voiceToggle');
-const startBtn = document.getElementById('startBtn');
+const voiceIcon = document.getElementById('voiceIcon');
 
-startBtn.addEventListener('click', () => {
+document.getElementById('startBtn').addEventListener('click', () => {
   const start = document.getElementById('startSelect').value;
-  const end = document.getElementById('endSelect').value;
-  drawRoute(start, end);
-  animateShopper(start, end);
+  const selected = Array.from(document.getElementById('destSelect').selectedOptions).map(o => o.value);
+  if(selected.length === 0){alert("Select at least one destination!");return;}
+  const route = [start, ...selected];
+  startMultiStop(route);
 });
 
-function drawRoute(start, end) {
-  const s = locations[start];
-  const e = locations[end];
+function drawRoute(start, end){
+  const s = locations[start], e = locations[end];
   path.setAttribute('d', `M${s.x},${s.y} L${e.x},${e.y}`);
-  path.style.animation = 'none';
-  void path.offsetWidth; // reset animation
+  path.style.animation = 'none'; void path.offsetWidth;
   path.style.animation = 'dash 2s linear forwards';
 }
 
-function animateShopper(start, end) {
-  const s = locations[start];
-  const e = locations[end];
-  shopper.style.left = s.x + 'px';
-  shopper.style.top = s.y + 'px';
-  if (voiceToggle.checked) speak(`Starting navigation from ${start} to ${end}.`);
-
-  setTimeout(() => {
-    shopper.style.left = e.x + 'px';
-    shopper.style.top = e.y + 'px';
-    if (voiceToggle.checked) speak(`You are approaching the ${end} section.`);
-    setTimeout(() => {
-      modal.classList.add('is-open');
-      if (voiceToggle.checked) speak(`You have reached the ${end} section. Navigation complete.`);
-    }, 2500);
-  }, 1000);
+async function startMultiStop(stops){
+  for(let i=0; i<stops.length-1; i++){
+    const s = stops[i], e = stops[i+1];
+    drawRoute(s,e);
+    await moveShopper(s,e);
+  }
+  modal.classList.add('is-open');
+  if(voiceToggle.checked) speak("Shopping route complete. All destinations visited.");
 }
 
-function speak(text) {
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.rate = 1;
-  utter.lang = "en-IN";
-  speechSynthesis.speak(utter);
+function moveShopper(start,end){
+  return new Promise(resolve=>{
+    const s = locations[start], e = locations[end];
+    shopper.style.left = s.x+'px';
+    shopper.style.top = s.y+'px';
+    if(voiceToggle.checked) speak(`Navigating from ${start} to ${end}.`);
+    setTimeout(()=>{
+      shopper.style.left = e.x+'px';
+      shopper.style.top = e.y+'px';
+      if(voiceToggle.checked) speak(`Arrived at ${end}.`);
+      setTimeout(()=>resolve(),2500);
+    },1000);
+  });
 }
-modal.addEventListener('click', () => modal.classList.remove('is-open'));
+
+function speak(text){
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "en-IN"; u.rate = 1; speechSynthesis.speak(u);
+}
+modal.addEventListener('click',()=>modal.classList.remove('is-open'));
+
+/* ===== Voice Command Recognition ===== */
+voiceIcon.addEventListener('click',()=>{
+  if(!('webkitSpeechRecognition' in window)){alert("Speech recognition not supported");return;}
+  const rec = new webkitSpeechRecognition();
+  rec.lang = "en-IN"; rec.start();
+  rec.onresult = e=>{
+    const cmd = e.results[0][0].transcript.toLowerCase();
+    handleVoiceCommand(cmd);
+  };
+});
+
+function handleVoiceCommand(cmd){
+  const words = Object.keys(locations);
+  for(let w of words){
+    if(cmd.includes(w)){
+      const start = document.getElementById('startSelect').value;
+      drawRoute(start,w);
+      moveShopper(start,w);
+      speak(`Navigating to ${w}`);
+      return;
+    }
+  }
+  speak("Sorry, I didn’t understand the destination.");
+}
 </script>
 </body>
-      </html>
-                                      
+                                       </html>
+      
