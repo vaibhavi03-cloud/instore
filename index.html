@@ -25,6 +25,41 @@ header {
   letter-spacing: 1px;
   font-weight: bold;
   box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+  position: relative;
+}
+
+/* ===== Toggle Switch ===== */
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  position: absolute;
+  right: 1rem;
+  top: 1rem;
+}
+.toggle input { display: none; }
+.toggle-label {
+  width: 45px; height: 24px;
+  background-color: #ccc;
+  border-radius: 9999px;
+  position: relative;
+  transition: background 0.3s;
+  cursor: pointer;
+}
+.toggle-label::after {
+  content: "";
+  position: absolute;
+  width: 20px; height: 20px;
+  background-color: white;
+  border-radius: 50%;
+  top: 2px; left: 2px;
+  transition: transform 0.3s;
+}
+.toggle-checkbox:checked + .toggle-label {
+  background-color: #48bb78;
+}
+.toggle-checkbox:checked + .toggle-label::after {
+  transform: translateX(21px);
 }
 
 /* ===== Floor Selector ===== */
@@ -46,7 +81,51 @@ header {
   transform: scale(1.05);
 }
 
-/* ===== Item Cards ===== */
+/* ===== Map Canvas ===== */
+#map {
+  width: 90%;
+  height: 250px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* ===== Route Path Animation ===== */
+.route {
+  position: absolute;
+  height: 4px;
+  background: linear-gradient(90deg, #00c853, #7b1fa2);
+  top: 120px;
+  left: 30px;
+  border-radius: 5px;
+  width: 0;
+  animation: none;
+}
+@keyframes routeFlow {
+  from { width: 0; }
+  to { width: 80%; }
+}
+
+/* ===== Moving Dot (user) ===== */
+.dot {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background-color: #00c853;
+  border-radius: 50%;
+  top: 114px;
+  left: 25px;
+  animation: none;
+}
+@keyframes moveDot {
+  from { left: 25px; }
+  to { left: 85%; }
+}
+
+/* ===== Items Grid ===== */
 .items {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
@@ -60,6 +139,7 @@ header {
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
   transition: 0.3s;
   position: relative;
+  cursor: pointer;
 }
 .item:hover {
   transform: translateY(-5px);
@@ -84,60 +164,18 @@ header {
 .out-stock { background-color: #ffcdd2; color: #b71c1c; }
 .sale { background-color: #fff9c4; color: #f57f17; }
 
-/* ===== Toggle Switch ===== */
-.toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-left: auto;
-  margin-right: 1rem;
-}
-.toggle input {
-  display: none;
-}
-.toggle-label {
-  width: 45px;
-  height: 24px;
-  background-color: #ccc;
-  border-radius: 9999px;
-  position: relative;
-  transition: background 0.3s;
-  cursor: pointer;
-}
-.toggle-label::after {
-  content: "";
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  background-color: white;
-  border-radius: 50%;
-  top: 2px;
-  left: 2px;
-  transition: transform 0.3s;
-}
-.toggle-checkbox:checked + .toggle-label {
-  background-color: #48bb78;
-}
-.toggle-checkbox:checked + .toggle-label::after {
-  transform: translateX(21px);
-}
-
 /* ===== Modal Styles ===== */
 .modal {
   display: none;
   position: fixed;
   z-index: 50;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
   background-color: rgba(0,0,0,0.6);
   align-items: center;
   justify-content: center;
 }
-.modal.is-open {
-  display: flex;
-}
+.modal.is-open { display: flex; }
 .modal-content {
   background: white;
   padding: 2rem;
@@ -160,9 +198,6 @@ header {
 .modal-content button:hover {
   background: #512da8;
 }
-
-/* Prevent scroll when modal open */
-body.modal-open { overflow: hidden; }
 
 /* ===== Footer ===== */
 footer {
@@ -193,6 +228,12 @@ footer {
     <option>First Floor</option>
     <option>Second Floor</option>
   </select>
+</div>
+
+<!-- Map Visualization -->
+<div id="map">
+  <div class="route" id="route"></div>
+  <div class="dot" id="dot"></div>
 </div>
 
 <section class="items" id="items">
@@ -246,7 +287,7 @@ footer {
 </div>
 
 <footer>
-  © 2025 Smart Mall Navigator | Multi-Floor + Voice Navigation Enabled 🇮🇳
+  © 2025 Smart Mall Navigator | Multi-Floor + Voice Navigation + Route Flow Enabled 🇮🇳
 </footer>
 
 <script>
@@ -288,13 +329,28 @@ function speak(text) {
   }
 }
 
-// ===== Click on Item to Get Voice Directions =====
+// ===== Route Flow Animation =====
+const route = document.getElementById("route");
+const dot = document.getElementById("dot");
+
+function showRoute() {
+  route.style.animation = "routeFlow 3s forwards";
+  dot.style.animation = "moveDot 3s forwards";
+  // reset animation for next click
+  setTimeout(() => {
+    route.style.animation = "none";
+    dot.style.animation = "none";
+  }, 3500);
+}
+
+// ===== Click on Item to Get Voice + Route =====
 document.querySelectorAll(".item").forEach(item => {
   item.addEventListener("click", () => {
     const name = item.querySelector("h3").innerText;
     const floor = item.dataset.floor;
     const msg = `Please go to the ${floor} to find ${name}.`;
     openModal(msg);
+    showRoute();
     if (voiceEnabled) speak(msg);
   });
 });
@@ -302,3 +358,4 @@ document.querySelectorAll(".item").forEach(item => {
 
 </body>
   </html>
+  
